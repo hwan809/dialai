@@ -44,6 +44,8 @@ MCP 서버는 전화 작업을 저장한 뒤 즉시 `callId`와 `queued` 상태�
 
 ## 4. MCP 계약
 
+엔드포인트는 MCP 2.0 Streamable HTTP를 사용하는 `/mcp`이며 요청마다 새 서버 인스턴스를 만드는 stateless 방식이다. 특정 클라이언트 SDK에 종속된 별도 API를 만들지 않는다.
+
 ### `create_phone_call`
 
 ```ts
@@ -71,6 +73,19 @@ type CreatePhoneCallOutput = {
 - `cancel_phone_call`: `queued` 또는 `retry_scheduled` 작업만 취소한다.
 
 모든 성공 응답은 사람이 읽는 `content`와 기계가 읽는 `structuredContent`를 함께 제공한다.
+
+### Codex 연결
+
+Codex CLI가 표준 Streamable HTTP MCP 서버로 직접 등록할 수 있어야 한다.
+
+```bash
+export DIALAI_MCP_TOKEN='call_...'
+codex mcp add dialai \
+  --url https://example.com/mcp \
+  --bearer-token-env-var DIALAI_MCP_TOKEN
+```
+
+로컬 개발에서는 URL만 `http://localhost:3000/mcp`로 바꾼다. README에는 등록, `codex mcp list` 확인, 네 도구 호출 예시를 포함한다. 원문 토큰은 Codex 설정 파일이나 저장소에 직접 기록하지 않고 환경변수 이름만 등록한다.
 
 ## 5. 상태와 결과
 
@@ -171,4 +186,5 @@ queued -> dialing -> connected -> completed
 2. 워커가 작업을 claim하고 ClawOps/OpenAI Realtime으로 한 통씩 실행한다.
 3. 전사, 요약, 확인된 사실, 후속 조치 필요 여부를 조회할 수 있다.
 4. 동일 요청 중복 발신과 테넌트 간 데이터 노출이 차단된다.
-5. 자동 검증과 승인된 실전화 한 건이 성공한다.
+5. Codex CLI가 `/mcp`를 Streamable HTTP 서버로 등록하고 네 도구를 조회·호출할 수 있다.
+6. 자동 검증과 승인된 실전화 한 건이 성공한다.

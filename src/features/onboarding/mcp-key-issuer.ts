@@ -19,7 +19,6 @@ export type IssueMcpKeyInput = {
 };
 
 export type IssuedMcpKey = {
-  apiKey: string;
   mcpUrl: string;
   installCommand: string;
 };
@@ -47,9 +46,8 @@ export class McpKeyIssuer {
     });
 
     return {
-      apiKey,
       mcpUrl,
-      installCommand: `export DIALAI_MCP_TOKEN=${shellQuote(apiKey)} && (codex mcp remove dialai >/dev/null 2>&1 || true) && codex mcp add dialai --url ${shellQuote(mcpUrl)} --bearer-token-env-var ${shellQuote("DIALAI_MCP_TOKEN")} && curl --fail --silent --show-error --header ${shellQuote(`Authorization: Bearer ${apiKey}`)} ${shellQuote(readinessUrl)} && codex --search`,
+      installCommand: `export DIALAI_MCP_TOKEN=${shellQuote(apiKey)} && (codex mcp remove dialai >/dev/null 2>&1 || true) && codex mcp add dialai --url ${shellQuote(mcpUrl)} --bearer-token-env-var ${shellQuote("DIALAI_MCP_TOKEN")} && test "$(curl --fail --silent --show-error --write-out '%{http_code}' --header "Authorization: Bearer $DIALAI_MCP_TOKEN" ${shellQuote(readinessUrl)})" = '{"ready":true}200' && codex --search`,
     };
   }
 }

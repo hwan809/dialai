@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import { createMcpInstallPost } from "@/features/onboarding/mcp-install-handler";
 
 const issued = {
-  apiKey: "call_abcdefghijklmnopqrstuvwxyz1234567890",
   mcpUrl: "https://dialai.example/mcp",
   installCommand: "export DIALAI_MCP_TOKEN='redacted-for-test' && codex mcp add dialai",
 };
@@ -25,7 +24,9 @@ describe("POST /api/mcp/install", () => {
 
     expect(response.status).toBe(201);
     expect(response.headers.get("cache-control")).toBe("no-store");
-    await expect(response.json()).resolves.toEqual(issued);
+    const body = await response.json();
+    expect(body).toEqual(issued);
+    expect(body).not.toHaveProperty("apiKey");
     expect(issue).toHaveBeenCalledWith({
       userId: "user-123",
       tenantName: "Codex Demo",

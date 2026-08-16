@@ -15,11 +15,13 @@
     "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.42",
     "@modelcontextprotocol/client": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "^2.112.3",
     "@teamlearners/clawops": "0.32.0",
+    "ai": "^7.0.66",
     "ky": "^2.0.2",
     "next": "16.3.1",
     "openai": "^7.4.0",

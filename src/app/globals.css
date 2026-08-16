@@ -1315,6 +1315,78 @@ textarea.field-control {
   gap: var(--space-3);
 }
 
+.reservation-chat {
+  min-block-size: calc(100dvb - 11rem);
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+}
+
+.reservation-chat__header {
+  display: grid;
+  gap: var(--space-2);
+  padding-block-end: var(--space-2);
+}
+
+.reservation-chat .conversation-thread {
+  gap: var(--space-5);
+}
+
+.chat-thinking {
+  color: var(--color-text-tertiary);
+}
+
+.chat-confirmation {
+  display: grid;
+  gap: var(--space-5);
+  margin-inline-start: 2.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 1rem;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-surface);
+  padding: var(--space-6);
+}
+
+.chat-confirmation__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--color-success);
+}
+
+.chat-confirmation__heading div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.chat-confirmation__heading span,
+.chat-confirmation__hint {
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+}
+
+.chat-confirmation__hint {
+  margin: 0;
+}
+
+.chat-confirmation .ui-button {
+  justify-self: end;
+}
+
+.conversation-composer {
+  position: sticky;
+  inset-block-end: var(--space-4);
+  z-index: 10;
+  inline-size: 100%;
+  min-block-size: 7.25rem;
+  margin-block-start: var(--space-2);
+}
+
+.reservation-chat > .suggestion-list {
+  inline-size: 100%;
+  justify-content: flex-start;
+}
+
 .landing-page {
   min-block-size: 100dvb;
   background: var(--color-background);
@@ -2029,6 +2101,15 @@ textarea.field-control {
 
   .assistant-task-card__actions .ui-button {
     flex: 1 1 100%;
+  }
+
+  .chat-confirmation {
+    margin-inline-start: 0;
+    padding: var(--space-4);
+  }
+
+  .chat-confirmation .ui-button {
+    inline-size: 100%;
   }
 }
 

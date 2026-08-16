@@ -5,23 +5,22 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Surface } from "@/components/ui/Surface";
 import { createReservationGateway } from "./gateway";
+import { ReservationConversation } from "./ReservationConversation";
 import { ReservationProgress } from "./ReservationProgress";
-import { ReservationRequestForm } from "./ReservationRequestForm";
 import { ReservationResult } from "./ReservationResult";
-import { ReservationReview } from "./ReservationReview";
 import type { CreateReservationInput, ReservationJob, UserCallResponse } from "./types";
 import { isTerminalReservationStatus } from "./types";
 
 type FlowState =
-  | { readonly kind: "request" }
-  | { readonly input: CreateReservationInput; readonly kind: "review" }
+  | { readonly kind: "chat" }
   | { readonly job: ReservationJob; readonly kind: "tracking" };
 
 const demoMode = process.env.NEXT_PUBLIC_RESERVATION_DEMO_MODE !== "false";
 
 export function ReservationApp() {
   const gateway = useMemo(() => createReservationGateway(), []);
-  const [flow, setFlow] = useState<FlowState>({ kind: "request" });
+  const [flow, setFlow] = useState<FlowState>({ kind: "chat" });
+  const [chatSession, setChatSession] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -91,7 +90,8 @@ export function ReservationApp() {
   const activeCall = flow.kind === "tracking" && !isTerminalReservationStatus(flow.job.status);
   const resetFlow = () => {
     setError(null);
-    setFlow({ kind: "request" });
+    setFlow({ kind: "chat" });
+    setChatSession((current) => current + 1);
     setMobileNavOpen(false);
   };
 
@@ -110,14 +110,10 @@ export function ReservationApp() {
           />
         ) : (
           <main id="main-content" className="page-frame page-frame--compact">
-            {flow.kind === "request" && (
-              <ReservationRequestForm onReview={(input) => setFlow({ input, kind: "review" })} />
-            )}
-            {flow.kind === "review" && (
-              <ReservationReview
-                input={flow.input}
+            {flow.kind === "chat" && (
+              <ReservationConversation
+                key={chatSession}
                 submitting={submitting}
-                onBack={() => setFlow({ kind: "request" })}
                 onStart={(input) => void startCall(input)}
               />
             )}

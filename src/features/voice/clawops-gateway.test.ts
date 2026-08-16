@@ -139,7 +139,7 @@ describe("ClawOpsVoiceGateway", () => {
       model: "gpt-realtime-2.1",
       voice: "marin",
       language: "ko",
-      greeting: true,
+      greeting: false,
     });
     expect(outcomeTool.name).toBe("record_call_outcome");
     expect(outcomeTool.parameters).toMatchObject({

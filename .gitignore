@@ -39,6 +39,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Local Codex session exports may contain environment secrets.
+.codex-session-exports/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -9,7 +9,7 @@ npm install
 cp .env.example .env.local
 ```
 
-Create a Supabase project, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and apply the SQL migration in `supabase/migrations/` to create the tenant, API-key, phone-call-job, and call-attempt tables plus their queue RPCs. For server and worker access, prefer `SUPABASE_SECRET_KEY`; `SUPABASE_SERVICE_ROLE_KEY` is a legacy fallback only. Neither server key belongs in a `NEXT_PUBLIC_` variable. The local worker and utility scripts automatically read `.env.local` when it exists.
+Create a Supabase project, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and apply every SQL migration in `supabase/migrations/` in filename order. The first migration creates the durable phone-call queue; the second links tenants to Supabase Auth users and adds transactional MCP-key rotation. For server and worker access, prefer `SUPABASE_SECRET_KEY`; `SUPABASE_SERVICE_ROLE_KEY` is a legacy fallback only. Neither server key belongs in a `NEXT_PUBLIC_` variable. Local scripts automatically read `.env.local` when it exists.
 
 Create a tenant and its MCP bearer token after configuring the Supabase environment:
 
@@ -19,19 +19,38 @@ npm run tenant:create -- --name "Example tenant"
 
 The raw `call_...` token is shown once. Store it in a secret manager; the database stores only its SHA-256 hash.
 
-## Two deployment processes
+## Hosted deployment: no user-side worker
 
-Deploy these as separate processes:
+Users run only Codex. DialAI operates two deployment processes against the same Supabase project:
 
 ```bash
-# Next.js MCP server (Vercel or another Node host)
-npm run dev
+# Public Next.js web/MCP service, for example on Vercel
+npm run build && npm run start
 
-# Always-on Node worker; never run this in a Vercel Route Handler
-npm run worker
+# Always-on Node worker on a container host
+docker build -f Dockerfile.worker -t dialai-worker .
+docker run --env-file .env.local dialai-worker
 ```
 
-The worker atomically claims one job at a time, heartbeats active work every 30 seconds, recovers locks stale for five minutes, and retries only one `no-answer`, `busy`, or transient provider failure. Add worker processes only after the ClawOps account supports the corresponding concurrent phone lines.
+`railway.worker.json` is provided for a separate Railway worker service. Because this is intentionally not the auto-discovered `railway.json`, set that service's **Config File** setting to `railway.worker.json`; do not set it on the public web service. Set `DIALAI_PUBLIC_URL` on the web service. Set the Supabase server key plus `CLAWOPS_API_KEY`, `CLAWOPS_ACCOUNT_ID`, `CLAWOPS_FROM_NUMBER`, and `OPENAI_API_KEY` on the worker. The worker atomically claims one job at a time, heartbeats active work every 30 seconds, recovers locks stale for five minutes, and retries only one `no-answer`, `busy`, or transient provider failure.
+
+## Main-page MCP installation contract
+
+The frontend must obtain a Supabase Auth session, then request a tenant-scoped key:
+
+```ts
+const response = await fetch("/api/mcp/install", {
+  method: "POST",
+  headers: {
+    authorization: `Bearer ${session.access_token}`,
+    "content-type": "application/json",
+  },
+  body: JSON.stringify({ tenantName: "My DialAI" }),
+});
+const { installCommand } = await response.json();
+```
+
+The `201` response contains `{ apiKey, mcpUrl, installCommand }` and is marked `Cache-Control: no-store`. Show `installCommand` once in a copy button. Issuing another key revokes the user's previous key; Postgres stores only the new SHA-256 hash.
 
 ## Codex MCP registration
 
@@ -42,6 +61,14 @@ export DIALAI_MCP_TOKEN='call_...'
 codex mcp add dialai --url https://example.com/mcp --bearer-token-env-var DIALAI_MCP_TOKEN
 codex mcp list
 ```
+
+Before opening Codex, verify that authentication, transport, and the complete tool set are live:
+
+```bash
+DIALAI_MCP_URL=https://example.com/mcp DIALAI_MCP_TOKEN='call_...' npm run mcp:check
+```
+
+Only after this prints `DialAI MCP ready` should the user start `codex --search`. If the DialAI tools are unavailable, Codex must report the connection failure and must not create a shell script that calls ClawOps directly.
 
 For local development, replace the URL with `http://localhost:3000/mcp`. DialAI exposes these generic tools:
 
@@ -56,7 +83,7 @@ For local development, replace the URL with `http://localhost:3000/mcp`. DialAI 
 
 `CLAWOPS_API_KEY`, `CLAWOPS_ACCOUNT_ID`, `CLAWOPS_FROM_NUMBER`, and `OPENAI_API_KEY` are server/worker secrets. The worker always uses `CLAWOPS_FROM_NUMBER`; MCP clients cannot select caller ID. Logs redact destinations to their last four digits and never print secrets, full context, or full phone numbers.
 
-The ClawOps agent uses Korean OpenAI Realtime, does not record audio, identifies itself as an AI assistant in its first turn, and records only text transcript plus confirmed facts. Do not commit `.env.local`, bearer tokens, Supabase secret keys, ClawOps credentials, or OpenAI credentials.
+The ClawOps agent uses Korean OpenAI Realtime, does not record audio, identifies itself as an AI assistant in its first turn, and records only text transcript plus confirmed facts. Realtime prewarm is disabled because a pre-answer session can invoke outcome or hang-up tools before the callee answers. The prompt uses DTMF for relevant ARS routing and never leaves personal data or callback numbers in voicemail. Do not commit `.env.local`, bearer tokens, Supabase secret keys, ClawOps credentials, or OpenAI credentials.
 
 ## Safe live smoke call
 

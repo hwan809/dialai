@@ -15,7 +15,7 @@ export async function createTenant(name: string, admin: TenantAdmin = createSupa
   const apiKey = generateApiKey();
   const tenant = await admin.from("tenants").insert({ name }).select("id").single();
   if (tenant.error || !tenant.data) throw new Error("Tenant creation failed.");
-  const key = await admin.from("api_keys").insert({ tenant_id: tenant.data.id, key_prefix: apiKey.prefix, key_hash: apiKey.hash });
+  const key = await admin.from("api_keys").insert({ tenant_id: tenant.data.id, key_hash: apiKey.hash });
   if (key.error) throw new Error("API key creation failed.");
   return apiKey;
 }

@@ -19,10 +19,13 @@ function callContent(call: PhoneCallJob): Record<string, unknown> {
 export function buildPhoneCallMcpServer(deps: PhoneCallMcpDependencies): McpServer {
   const server = new McpServer(
     { name: "dialai-phone-caller", version: "0.1.0" },
-    { capabilities: { tools: {} }, instructions: "create_phone_call은 비동기입니다. callId를 보관하고 get_phone_call로 결과를 확인하세요." },
+    {
+      capabilities: { tools: {} },
+      instructions: "업장명이 주어지고 전화번호가 없으면 먼저 web search로 공개 전화번호를 확인하세요. 예약에 필요한 인원·이름 등 필수 정보가 없으면 사용자에게 질문하세요. 확인된 전화번호로 create_phone_call을 정확히 한 번 호출하고, 반환된 callId는 get_phone_call로 조회하세요. DialAI 도구가 없거나 오류가 나면 shell 또는 직접 통신사 API로 우회하지 말고 사용자에게 연결 오류를 알리세요.",
+    },
   );
 
-  server.registerTool("create_phone_call", { description: "Queue a phone call that runs asynchronously.", inputSchema: createPhoneCallInputSchema }, async (input) => {
+  server.registerTool("create_phone_call", { description: "After using web search to verify the public destination number and collecting required user details, queue the phone call exactly once. The call runs asynchronously; never bypass this tool with shell scripts or direct telephony APIs.", inputSchema: createPhoneCallInputSchema }, async (input) => {
     try {
       const call = await deps.service.create(deps.tenantId, input);
       return success(`전화 작업 ${call.id}이(가) ${call.status} 상태로 생성되었습니다.`, { callId: call.id, status: call.status, createdAt: call.createdAt });

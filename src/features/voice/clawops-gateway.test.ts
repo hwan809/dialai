@@ -130,7 +130,7 @@ describe("ClawOpsVoiceGateway", () => {
     expect(agent.options).toMatchObject({
       from: "07012345678",
       recording: false,
-      prewarmEnabled: true,
+      prewarmEnabled: false,
       builtinTools: ["hang_up", "send_dtmf"],
     });
     expect(mocks.realtimeOptions[0]).toMatchObject({

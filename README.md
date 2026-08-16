@@ -47,28 +47,24 @@ const response = await fetch("/api/mcp/install", {
   },
   body: JSON.stringify({ tenantName: "My DialAI" }),
 });
-const { installCommand } = await response.json();
+const { installCommand, mcpUrl } = await response.json();
 ```
 
-The `201` response contains `{ apiKey, mcpUrl, installCommand }` and is marked `Cache-Control: no-store`. Show `installCommand` once in a copy button. Issuing another key revokes the user's previous key; Postgres stores only the new SHA-256 hash.
+The `201` response contains `{ mcpUrl, installCommand }` and is marked `Cache-Control: no-store`. Show `installCommand` once in a copy button; it is the only place the raw key appears. Issuing another key revokes the user's previous key; Postgres stores only the new SHA-256 hash.
 
 ## Codex MCP registration
 
-Set the bearer token in your shell, not in the repository or Codex configuration file:
+For hosted onboarding, copy and run the returned `installCommand`. It requires only Codex plus ordinary shell tooling: it replaces the DialAI registration, verifies the exact hosted readiness response, and starts Codex only after that check succeeds. Do not save the command or its exported bearer token in the repository or Codex configuration file.
 
-```bash
-export DIALAI_MCP_TOKEN='call_...'
-codex mcp add dialai --url https://example.com/mcp --bearer-token-env-var DIALAI_MCP_TOKEN
-codex mcp list
-```
+## Operator-only repository diagnostics
 
-Before opening Codex, verify that authentication, transport, and the complete tool set are live:
+Maintainers with this repository may run the full MCP tool-set diagnostic:
 
 ```bash
 DIALAI_MCP_URL=https://example.com/mcp DIALAI_MCP_TOKEN='call_...' npm run mcp:check
 ```
 
-Only after this prints `DialAI MCP ready` should the user start `codex --search`. If the DialAI tools are unavailable, Codex must report the connection failure and must not create a shell script that calls ClawOps directly.
+This is not part of end-user hosted onboarding. If the DialAI tools are unavailable, report the connection failure and do not create a shell script that calls ClawOps directly.
 
 For local development, replace the URL with `http://localhost:3000/mcp`. DialAI exposes these generic tools:
 

@@ -28,13 +28,31 @@ export function toPhoneCallInput(input: CreateReservationInput): CreatePhoneCall
     }),
     destinationPhone: input.destinationPhone,
     idempotencyKey: input.idempotencyKey,
-    objective: `${input.placeName}에 ${input.requestedAt}, ${input.partySize}명, ${input.customerName} 이름으로 예약을 확정해 주세요.`,
+    objective: `${input.placeName}에 ${formatReservationTime(input.requestedAt)}, ${input.partySize}명, ${input.customerName} 이름으로 예약 가능한지 바로 묻고 예약을 확정해 주세요.`,
     successCriteria: [
       "요청한 일시와 인원으로 예약이 확정되었는지 확인",
       `예약자명이 ${input.customerName}으로 등록되었는지 확인`,
       "확정 여부와 매장이 안내한 주의사항을 사실로 기록",
     ],
   };
+}
+
+function formatReservationTime(requestedAt: string): string {
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    day: "numeric",
+    hour: "numeric",
+    hour12: true,
+    minute: "2-digit",
+    month: "long",
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+  }).formatToParts(new Date(requestedAt));
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  const minute = value("minute");
+  const minuteText = minute === "00" ? "" : ` ${Number(minute)}분`;
+
+  return `${value("year")}년 ${value("month")} ${value("day")}일 ${value("dayPeriod")} ${value("hour")}시${minuteText}`;
 }
 
 export function toReservationJob(call: PhoneCallJob): ReservationJob {

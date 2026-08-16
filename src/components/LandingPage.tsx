@@ -6,6 +6,7 @@ import {
   ShieldCheck,
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
+import { McpConnectCard } from "./McpConnectCard";
 
 const steps = [
   { number: "01", title: "할 일을 말해주세요", description: "자연어로 예약 요청을 남기면 필요한 정보를 대화로 확인합니다." },
@@ -24,6 +25,7 @@ export function LandingPage() {
           </Link>
           <nav className="landing-nav__links" aria-label="페이지 메뉴">
             <a href="#how-it-works">이용 방법</a>
+            <a href="#codex">Codex 연결</a>
             <a href="#control">사용자 개입</a>
             <a href="#mvp-scope">MVP 범위</a>
           </nav>
@@ -67,6 +69,22 @@ export function LandingPage() {
                 <li className="is-current">상담 진행</li>
               </ol>
             </div>
+          </div>
+        </section>
+
+        <section id="codex" className="landing-section landing-section--codex">
+          <div className="landing-container mcp-connect-grid">
+            <div className="mcp-connect-copy">
+              <p className="landing-eyebrow">Codex MCP</p>
+              <h2>한 줄로 Codex에<br />전화 능력을 더하세요.</h2>
+              <p>명령을 한 번 붙여넣으면 Codex가 업체를 검색하고, 공개 전화번호를 확인한 뒤 DialAI를 통해 전화를 맡길 수 있습니다.</p>
+              <ul>
+                <li><Check size={17} weight="bold" /> 사용자 기기에 worker 설치 불필요</li>
+                <li><Check size={17} weight="bold" /> 연결 확인 성공 후에만 Codex 실행</li>
+                <li><Check size={17} weight="bold" /> 키는 한 번만 표시하고 서버에는 해시만 저장</li>
+              </ul>
+            </div>
+            <McpConnectCard />
           </div>
         </section>
 

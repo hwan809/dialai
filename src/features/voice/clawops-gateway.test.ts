@@ -15,6 +15,7 @@ type FakeAgent = {
     callId: string;
     endedStatus: string | null;
     endedDuration: number | null;
+    hangup: ReturnType<typeof vi.fn>;
     wait: ReturnType<typeof vi.fn>;
     finish(): void;
   };
@@ -32,6 +33,7 @@ vi.mock("@teamlearners/clawops/agent", () => ({
       callId: "provider_call_123",
       endedStatus: "completed" as string | null,
       endedDuration: 42 as number | null,
+      hangup: vi.fn(async () => undefined),
       resolveWait: undefined as (() => void) | undefined,
       wait: vi.fn(
         () =>
@@ -131,10 +133,10 @@ describe("ClawOpsVoiceGateway", () => {
       from: "07012345678",
       recording: false,
       prewarmEnabled: false,
-      builtinTools: ["hang_up", "send_dtmf"],
+      builtinTools: ["send_dtmf"],
     });
     expect(mocks.realtimeOptions[0]).toMatchObject({
-      model: "gpt-realtime-2",
+      model: "gpt-realtime-2.1",
       voice: "marin",
       language: "ko",
       greeting: true,
@@ -192,6 +194,49 @@ describe("ClawOpsVoiceGateway", () => {
       },
     });
     expect(agent.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it("blocks premature outcomes and never exposes a self-hangup tool", async () => {
+    const recorded = callbacks();
+    const gateway = new ClawOpsVoiceGateway({ fromNumber: "07012345678" });
+
+    const callPromise = gateway.call(job, recorded);
+    await vi.waitFor(() => expect(mocks.agentInstances).toHaveLength(1));
+    const agent = mocks.agentInstances[0] as FakeAgent;
+    const outcomeTool = agent.tool.mock.calls.find(([tool]) => tool.name === "record_call_outcome")?.[0] as {
+      handler: (args: unknown) => Promise<string>;
+    };
+    expect(agent.tool.mock.calls.map(([tool]) => tool.name)).not.toContain("hang_up");
+    await agent.handlers.get("call_start")?.(agent.callSession);
+
+    await expect(outcomeTool.handler({
+      result: "needs_human",
+      summary: "이 환경에서는 전화할 수 없습니다.",
+      reason: "전화 수단이 없습니다.",
+    })).resolves.toContain("상대방 음성");
+    expect(recorded.onOutcome).not.toHaveBeenCalled();
+    expect(agent.callSession.hangup).not.toHaveBeenCalled();
+
+    await agent.handlers.get("transcript")?.(agent.callSession, "user", "네, 잇텐입니다.");
+    await expect(outcomeTool.handler({
+      result: "needs_human",
+      summary: "예약 가능 시간을 다시 확인해야 합니다.",
+      reason: "대체 시간을 선택해야 합니다.",
+    })).resolves.toContain("대화를 더 시도");
+    expect(recorded.onOutcome).not.toHaveBeenCalled();
+
+    await agent.handlers.get("transcript")?.(agent.callSession, "user", "그 시간은 만석이고 7시 30분은 가능합니다.");
+    await outcomeTool.handler({
+      result: "needs_human",
+      summary: "7시 30분 대체 시간을 선택해야 합니다.",
+      reason: "사용자의 시간 변경 동의가 필요합니다.",
+    });
+    expect(recorded.onOutcome).toHaveBeenCalledOnce();
+    expect(agent.callSession.hangup).not.toHaveBeenCalled();
+
+    await vi.waitFor(() => expect(agent.callSession.wait).toHaveBeenCalledOnce());
+    agent.callSession.finish();
+    await callPromise;
   });
 
   it("does not invent an outcome when an unanswered call has no detail record", async () => {

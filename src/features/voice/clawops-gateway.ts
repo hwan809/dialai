@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { PhoneCallJob, PhoneCallOutcome } from "@/features/phone-calls/types";
 
 import type { VoiceCallResult, VoiceCallbacks, VoiceGateway, VoiceTerminalStatus } from "./gateway";
-import { buildPhoneCallPrompt } from "./prompt";
+import { buildPhoneCallPrompt, phoneCallAgentText } from "./prompt";
 
 const phoneCallOutcomeSchema = z.discriminatedUnion("result", [
   z.object({
@@ -67,10 +67,11 @@ export class ClawOpsVoiceGateway implements VoiceGateway {
 
   async call(job: PhoneCallJob, callbacks: VoiceCallbacks): Promise<VoiceCallResult> {
     let outcome: PhoneCallOutcome | null = null;
+    let calleeTurnCount = 0;
     const realtime = new OpenAIRealtime({
       apiKey: this.options.openAiApiKey,
       systemPrompt: buildPhoneCallPrompt(job),
-      model: "gpt-realtime-2",
+      model: "gpt-realtime-2.1",
       voice: "marin",
       language: "ko",
       greeting: true,
@@ -82,24 +83,33 @@ export class ClawOpsVoiceGateway implements VoiceGateway {
       session: realtime,
       recording: false,
       prewarmEnabled: false,
-      builtinTools: [BuiltinTool.HANG_UP, BuiltinTool.SEND_DTMF],
+      builtinTools: [BuiltinTool.SEND_DTMF],
     });
 
     agent.tool({
       name: "record_call_outcome",
-      description: "통화의 확인된 결과를 기록합니다.",
+      description: phoneCallAgentText.outcomeToolDescription,
       parameters: outcomeToolParameters,
       required: ["result", "summary"],
       handler: async (args) => {
+        if (calleeTurnCount === 0) {
+          return phoneCallAgentText.beforeCalleeOutcome;
+        }
         const parsedOutcome = phoneCallOutcomeSchema.parse(args) as PhoneCallOutcome;
+        if (parsedOutcome.result === "needs_human" && calleeTurnCount < 2) {
+          return phoneCallAgentText.continueBeforeNeedsHuman;
+        }
         outcome = parsedOutcome;
         await callbacks.onOutcome(parsedOutcome);
-        return "결과가 기록되었습니다.";
+        return phoneCallAgentText.outcomeRecorded;
       },
     });
-    agent.on("call_start", () => void callbacks.onConnected());
+    agent.on("call_start", () => {
+      void callbacks.onConnected();
+    });
     agent.on("transcript", (_call, role: string, text: string) => {
       if ((role === "assistant" || role === "user") && text.trim()) {
+        if (role === "user") calleeTurnCount += 1;
         void callbacks.onTranscript({ role, text: text.trim(), at: new Date().toISOString() });
       }
     });

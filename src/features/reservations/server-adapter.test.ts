@@ -32,7 +32,7 @@ describe("toPhoneCallInput", () => {
       }),
       destinationPhone: "0212345678",
       idempotencyKey: "reservation-20260817-001",
-      objective: "코덱스 식당에 2026-08-17T19:00:00+09:00, 2명, 홍길동 이름으로 예약을 확정해 주세요.",
+      objective: "코덱스 식당에 2026년 8월 17일 오후 7시, 2명, 홍길동 이름으로 예약 가능한지 바로 묻고 예약을 확정해 주세요.",
       successCriteria: [
         "요청한 일시와 인원으로 예약이 확정되었는지 확인",
         "예약자명이 홍길동으로 등록되었는지 확인",

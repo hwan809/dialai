@@ -15,6 +15,8 @@ it("builds a purpose-first Korean prompt with the complete call request in a dat
 
   expect(prompt).toMatch(/^첫 발화에서는 자연스럽게 인사한 뒤/);
   expect(prompt).toContain("구체적인 용건을 말한 뒤 바로 가능 여부를 질문하세요");
+  expect(prompt).toContain("첫 발화는 최대 두 문장의 짧은 질문으로 끝내세요");
+  expect(prompt).toContain("확정 확인과 추가 안내사항은 상대방의 첫 답변 뒤에 물으세요");
   expect(prompt).toContain("상대방이 먼저 용건을 물을 때까지 기다리지 마세요");
   expect(prompt).toContain("인사와 소개는 통화 전체에서 첫 발화에만 한 번 하세요");
   expect(prompt).toContain("상대방이 말을 끊으면 인사나 소개를 반복하지 말고");
@@ -30,6 +32,8 @@ it("builds a purpose-first Korean prompt with the complete call request in a dat
   expect(prompt).toContain("실제 전화 회선에 이미 연결된 상태입니다");
   expect(prompt).toContain("전화 기능이나 통화 수단이 없다고 말하지 마세요");
   expect(prompt).toContain("질문을 바꾸어 최소 두 번 대화를 시도하세요");
+  expect(prompt).toContain("말, 도구 인자, 결과 요약을 모두 자연스러운 한국어로 작성하세요");
+  expect(prompt).toContain("내부 처리 과정이나 도구 사용을 소리 내어 설명하지 마세요");
   expect(prompt).toContain("needs_human은 사용자의 새로운 결정이 반드시 필요할 때만");
 
   const jsonBlock = prompt.match(/```json\n([\s\S]+?)\n```/)?.[1];

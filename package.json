@@ -9,9 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "worker": "tsx src/worker/index.ts",
-    "smoke:call": "tsx scripts/live-call-smoke.ts",
-    "tenant:create": "tsx scripts/create-tenant.ts",
+    "worker": "node --env-file-if-exists=.env.local --import tsx src/worker/index.ts",
+    "smoke:call": "node --env-file-if-exists=.env.local --import tsx scripts/live-call-smoke.ts",
+    "tenant:create": "node --env-file-if-exists=.env.local --import tsx scripts/create-tenant.ts",
     "doctor": "npx react-doctor@latest"
   },
   "dependencies": {

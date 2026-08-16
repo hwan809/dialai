@@ -17,11 +17,14 @@ function requireEnvironment(name: string): string {
 }
 export async function runLiveCallSmoke(env: LiveCallEnvironment = process.env): Promise<void> {
   const destinationPhone = assertLiveCallAllowed(env);
+  const objective = env.LIVE_CALL_OBJECTIVE?.trim()
+    || "AI 전화 도우미임을 밝히고 통화 연결을 확인한 뒤 종료해 주세요.";
+  const context = env.LIVE_CALL_CONTEXT?.trim() || undefined;
   const gateway = new ClawOpsVoiceGateway({ fromNumber: requireEnvironment("CLAWOPS_FROM_NUMBER"), apiKey: requireEnvironment("CLAWOPS_API_KEY"), accountId: requireEnvironment("CLAWOPS_ACCOUNT_ID"), openAiApiKey: requireEnvironment("OPENAI_API_KEY") });
   const now = new Date().toISOString();
   const job: PhoneCallJob = {
     id: randomUUID(), tenantId: "live-smoke", idempotencyKey: `live-smoke-${randomUUID()}`, destinationPhone,
-    objective: "이 통화는 DialAI 연결 확인용 테스트입니다. AI 전화 도우미임을 밝히고 연결을 확인한 뒤 통화를 종료해 주세요.", successCriteria: ["통화 연결 확인"], status: "dialing", attemptCount: 1, nextAttemptAt: null, outcome: null, lastFailureReason: null, transcript: [], createdAt: now, updatedAt: now,
+    objective, context, successCriteria: ["요청한 정보를 확인하고 통화 결과를 기록"], status: "dialing", attemptCount: 1, nextAttemptAt: null, outcome: null, lastFailureReason: null, transcript: [], createdAt: now, updatedAt: now,
   };
   const result = await gateway.call(job, { onInitiated: async () => undefined, onConnected: async () => undefined, onTranscript: async () => undefined, onOutcome: async () => undefined });
   console.info("Live call smoke finished.", { destinationLastFour: destinationPhone.slice(-4), terminalStatus: result.terminalStatus, durationSeconds: result.durationSeconds, outcome: result.outcome?.result ?? null });

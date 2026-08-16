@@ -20,6 +20,21 @@ const missingOutcome: PhoneCallOutcome = {
   reason: "AI가 통화 결과를 기록하지 않아 담당자의 확인이 필요합니다.",
 };
 
+class PhoneCallPersistenceError extends Error {
+  constructor(readonly persistenceCause: unknown) {
+    super(persistenceCause instanceof Error ? persistenceCause.message : "Phone call persistence failed.");
+    this.name = "PhoneCallPersistenceError";
+  }
+}
+
+async function persist(action: () => Promise<unknown>): Promise<void> {
+  try {
+    await action();
+  } catch (error) {
+    throw new PhoneCallPersistenceError(error);
+  }
+}
+
 export async function processPhoneCall(job: ClaimedPhoneCall, deps: ProcessPhoneCallDependencies): Promise<void> {
   const setIntervalFn = deps.setInterval ?? setInterval;
   const clearIntervalFn = deps.clearInterval ?? clearInterval;
@@ -36,19 +51,22 @@ export async function processPhoneCall(job: ClaimedPhoneCall, deps: ProcessPhone
       result = await deps.gateway.call(job, {
         onInitiated: async (callId) => {
           providerCallId = callId;
-          await deps.repository.startAttempt(job.id, job.attemptCount, callId);
+          await persist(() => deps.repository.startAttempt(job.id, job.attemptCount, callId));
         },
         onConnected: async () => {
-          await deps.repository.markConnected(job.id);
+          await persist(() => deps.repository.markConnected(job.id));
           deps.onStatusChange?.(job, "connected");
         },
-        onTranscript: (segment) => deps.repository.appendTranscript(job.id, segment),
+        onTranscript: (segment) => persist(() => deps.repository.appendTranscript(job.id, segment)),
         onOutcome: async (outcome) => {
+          await persist(() => deps.repository.saveOutcome(job.id, outcome));
           outcomePersisted = true;
-          await deps.repository.saveOutcome(job.id, outcome);
         },
       });
     } catch (error) {
+      if (error instanceof PhoneCallPersistenceError) {
+        throw error.persistenceCause instanceof Error ? error.persistenceCause : error;
+      }
       if (providerCallId) {
         await deps.repository.completeAttempt(job.id, job.attemptCount, {
           providerCallId,

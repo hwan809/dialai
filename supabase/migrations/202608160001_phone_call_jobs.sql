@@ -9,6 +9,7 @@ create table public.tenants (
 create table public.api_keys (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
+  key_prefix text not null check (char_length(key_prefix) = 12),
   key_hash text not null unique check (key_hash ~ '^[a-f0-9]{64}$'),
   created_at timestamptz not null default now(),
   revoked_at timestamptz

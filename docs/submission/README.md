@@ -82,7 +82,7 @@ README에는 위 발표자료, 영상, 팀원별 Build Log와 실제 배포 URL�
 - 다른 Repository에서 실행한 세션
 - `hi` 같은 연결 확인만 한 세션
 - 실제 작업이 없는 모델 설정 세션
-- Claude Code에서 가져온 대화나 Claude 세션 이전만 수행한 세션
+- 외부 AI 코딩 에이전트에서 가져온 대화나 외부 세션 이전만 수행한 세션
 
 원본 JSONL 전체는 시스템 지침, 로컬 경로, 개인정보나 비밀값이 포함될 수 있으므로
 그대로 Repository에 올리지 않는다. 제출용 Markdown으로 요약하고 민감정보를 다시
@@ -214,4 +214,4 @@ MP4를 렌더링하고 Studio에서 미리 볼 수 있다.
 - [ ] README의 자리표시자와 `TODO`가 없다.
 - [ ] 비밀키, 개인정보, 원본 Codex JSONL이 커밋되지 않았다.
 - [ ] 제출 브랜치의 `npm run lint`와 `npm run build`가 통과한다.
-- [ ] Claude Code 산출물이나 Claude 세션을 Codex Build Log로 제출하지 않는다.
+- [ ] 외부 AI 코딩 에이전트 산출물이나 외부 세션을 Codex Build Log로 제출하지 않는다.

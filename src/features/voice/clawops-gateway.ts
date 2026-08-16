@@ -74,7 +74,7 @@ export class ClawOpsVoiceGateway implements VoiceGateway {
       model: "gpt-realtime-2.1",
       voice: "marin",
       language: "ko",
-      greeting: false,
+      greeting: true,
     });
     const agent = new ClawOpsAgent({
       apiKey: this.options.apiKey,

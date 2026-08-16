@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "worker": "tsx src/worker/index.ts",
+    "smoke:call": "tsx scripts/live-call-smoke.ts",
+    "tenant:create": "tsx scripts/create-tenant.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "^2.0.0",
@@ -19,6 +22,7 @@
     "openai": "^7.4.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "tsx": "^4.23.12",
     "ws": "^8.21.3",
     "zod": "^4.4.3"
   },
@@ -31,7 +35,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
-    "tsx": "^4.23.12",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"

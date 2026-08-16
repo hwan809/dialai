@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "worker": "node --env-file-if-exists=.env.local --import tsx src/worker/index.ts",
+    "mcp:check": "node --env-file-if-exists=.env.local --import tsx scripts/mcp-health.ts",
     "smoke:call": "node --env-file-if-exists=.env.local --import tsx scripts/live-call-smoke.ts",
     "tenant:create": "node --env-file-if-exists=.env.local --import tsx scripts/create-tenant.ts",
     "doctor": "npx react-doctor@latest"

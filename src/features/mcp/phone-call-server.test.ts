@@ -33,7 +33,10 @@ describe("phone-call MCP server", () => {
     const transport = new StreamableHTTPClientTransport(new URL("http://test.local/mcp"), { fetch: (url, init) => handler.fetch(new Request(url, init)) });
     const client = new Client({ name: "test-client", version: "1.0.0" }, { versionNegotiation: { mode: "auto" } });
     await client.connect(transport);
-    expect((await client.listTools()).tools.map((tool) => tool.name)).toEqual(["create_phone_call", "get_phone_call", "list_phone_calls", "cancel_phone_call"]);
+    const tools = (await client.listTools()).tools;
+    expect(tools.map((tool) => tool.name)).toEqual(["create_phone_call", "get_phone_call", "list_phone_calls", "cancel_phone_call"]);
+    expect(tools.find((tool) => tool.name === "create_phone_call")?.description).toContain("web search");
+    expect(tools.find((tool) => tool.name === "create_phone_call")?.description).toContain("exactly once");
     const created = await client.callTool({ name: "create_phone_call", arguments: { idempotencyKey: "mcp-phone-call-001", destinationPhone: "02-1234-5678", objective: "오늘 영업시간을 확인해 주세요." } });
     expect(created.isError).not.toBe(true);
     expect(created.structuredContent).toMatchObject({ status: "queued" });

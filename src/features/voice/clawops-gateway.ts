@@ -81,7 +81,7 @@ export class ClawOpsVoiceGateway implements VoiceGateway {
       from: this.options.fromNumber,
       session: realtime,
       recording: false,
-      prewarmEnabled: true,
+      prewarmEnabled: false,
       builtinTools: [BuiltinTool.HANG_UP, BuiltinTool.SEND_DTMF],
     });
 

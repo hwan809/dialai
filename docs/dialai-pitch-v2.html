@@ -1,0 +1,3516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0c0a09">
+    <title>DialAI — Pitch Deck v2</title>
+
+    <!-- Editorial Korean typography: light serif display + neutral sans body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@300;400&amp;display=swap" rel="stylesheet">
+
+    <style>
+        /* ===========================================
+           THEME TOKENS
+           Adjust these variables to restyle the deck.
+           =========================================== */
+        :root {
+            --stage-bg: #0c0a09;
+            --slide-bg: #f5f5f5;
+            --canvas: #f5f5f5;
+            --canvas-soft: #fafafa;
+            --ink: #0c0a09;
+            --ink-soft: #292524;
+            --body: #4e4e4e;
+            --muted: #777169;
+            --muted-soft: #a8a29e;
+            --hairline: #e7e5e4;
+            --hairline-strong: #d6d3d1;
+            --surface: #ffffff;
+            --surface-strong: #f0efed;
+            --mint: #a7e5d3;
+            --peach: #f4c5a8;
+            --lavender: #c8b8e0;
+            --sky: #a8c8e8;
+            --rose: #e8b8c4;
+            --accent: #a7e5d3;
+            --accent-soft: #e4f4ee;
+            --accent-ink: #173f35;
+            --success: #16a34a;
+
+            --font-display: "Noto Serif KR", serif;
+            --font-body: "Noto Sans KR", sans-serif;
+            --slide-padding-x: 120px;
+            --slide-padding-y: 88px;
+
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration: 620ms;
+        }
+
+        /* ===========================================
+           RESET
+           =========================================== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        button {
+            color: inherit;
+        }
+
+        /* ===========================================
+           FIXED 16:9 STAGE: MANDATORY BASE STYLES
+           Include this ENTIRE file in every presentation.
+           Slides are authored at 1920×1080 and scaled as a whole.
+           =========================================== */
+
+        /* 1. Lock the browser viewport */
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: var(--stage-bg, #000);
+        }
+
+        /* 2. Full-window deck viewport */
+        .deck-viewport {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background: var(--stage-bg, #000);
+        }
+
+        /* 3. Fixed 16:9 design canvas.
+           JavaScript sets transform: translate(...) scale(...). */
+        .deck-stage {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            transform-origin: 0 0;
+            background: var(--slide-bg, #fff);
+        }
+
+        /* 4. Slides stack inside the fixed stage.
+           Content must be laid out at 1920×1080, not reflowed per device. */
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            background: var(--slide-bg, #fff);
+        }
+
+        .slide.active,
+        .slide.visible {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        /* 5. Keep media inside authored slide bounds */
+        img,
+        video,
+        canvas,
+        svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* 6. Presentation chrome stays outside the slide design system */
+        .deck-controls {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        /* 7. Print one fixed-size slide per page */
+        @media print {
+            html,
+            body {
+                width: 1920px;
+                height: auto;
+                overflow: visible;
+                background: #fff;
+            }
+
+            .deck-viewport {
+                position: static;
+                overflow: visible;
+                background: #fff;
+            }
+
+            .deck-stage {
+                position: static;
+                width: auto;
+                height: auto;
+                transform: none !important;
+                background: none;
+            }
+
+            .slide {
+                position: relative;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                width: 1920px;
+                height: 1080px;
+                break-after: page;
+                page-break-after: always;
+            }
+
+            .slide:last-child {
+                break-after: auto;
+                page-break-after: auto;
+            }
+
+            .deck-controls {
+                display: none !important;
+            }
+        }
+
+        /* 8. Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+        }
+
+        /* ===========================================
+           DECK BASE
+           =========================================== */
+        body {
+            color: var(--ink);
+            font-family: var(--font-body);
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        .slide {
+            isolation: isolate;
+            color: var(--ink);
+            background: var(--canvas);
+            transition: opacity 260ms ease;
+        }
+
+        .slide::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -3;
+            pointer-events: none;
+            opacity: 0.13;
+            background-image:
+                linear-gradient(rgba(12, 10, 9, 0.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(12, 10, 9, 0.035) 1px, transparent 1px);
+            background-size: 96px 96px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.22), transparent 62%);
+        }
+
+        .slide.dark {
+            color: #fff;
+            background: var(--ink);
+        }
+
+        .slide.dark::after {
+            opacity: 0.08;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+
+        .slide-shell {
+            position: absolute;
+            inset: 0;
+            padding: var(--slide-padding-y) var(--slide-padding-x) 72px;
+        }
+
+        .slide-topline {
+            position: absolute;
+            top: 46px;
+            left: var(--slide-padding-x);
+            right: var(--slide-padding-x);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            z-index: 8;
+        }
+
+        .dark .slide-topline {
+            color: var(--muted-soft);
+        }
+
+        .slide-topline .brand {
+            color: var(--ink);
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            text-transform: none;
+        }
+
+        .dark .slide-topline .brand {
+            color: #fff;
+        }
+
+        .slide-title,
+        .display-copy,
+        .closing-copy {
+            font-family: var(--font-display);
+            font-weight: 300;
+            letter-spacing: -0.045em;
+            word-break: keep-all;
+            overflow-wrap: normal;
+            line-break: strict;
+            hyphens: none;
+            text-wrap: balance;
+        }
+
+        .slide-title {
+            font-size: 76px;
+            line-height: 1.18;
+        }
+
+        .slide-title.compact {
+            font-size: 70px;
+        }
+
+        .line {
+            display: block;
+            white-space: nowrap;
+        }
+
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .body-copy {
+            color: var(--body);
+            font-size: 30px;
+            line-height: 1.56;
+            letter-spacing: -0.012em;
+            word-break: keep-all;
+            overflow-wrap: normal;
+            line-break: strict;
+            text-wrap: pretty;
+        }
+
+        .dark .body-copy {
+            color: #d6d3d1;
+        }
+
+        .eyebrow {
+            color: var(--muted);
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .dark .eyebrow {
+            color: var(--muted-soft);
+        }
+
+        .hairline {
+            height: 1px;
+            background: var(--hairline);
+        }
+
+        .speaker-notes {
+            display: none;
+        }
+
+        /* ===========================================
+           ATMOSPHERIC ORBS
+           Decorative only; never used as content fill.
+           =========================================== */
+        .atmosphere {
+            position: absolute;
+            z-index: -2;
+            border-radius: 50%;
+            filter: blur(6px);
+            opacity: 0.74;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 31% 31%, rgba(167, 229, 211, 0.92), transparent 42%),
+                radial-gradient(circle at 69% 27%, rgba(168, 200, 232, 0.86), transparent 40%),
+                radial-gradient(circle at 69% 71%, rgba(200, 184, 224, 0.88), transparent 42%),
+                radial-gradient(circle at 28% 74%, rgba(244, 197, 168, 0.82), transparent 45%),
+                rgba(250, 250, 250, 0.35);
+        }
+
+        .atmosphere.soft {
+            opacity: 0.34;
+            filter: blur(22px);
+        }
+
+        .dark .atmosphere {
+            opacity: 0.48;
+        }
+
+        /* ===========================================
+           MOTION
+           Calm editorial reveals and restrained waveform.
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition:
+                opacity var(--duration) var(--ease-out-expo),
+                transform var(--duration) var(--ease-out-expo);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-30px);
+            transition:
+                opacity var(--duration) var(--ease-out-expo),
+                transform var(--duration) var(--ease-out-expo);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.96);
+            transition:
+                opacity 720ms var(--ease-out-expo),
+                transform 720ms var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal,
+        .slide.visible .reveal-left {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        .slide.visible .reveal-scale {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .delay-1 { transition-delay: 90ms; }
+        .delay-2 { transition-delay: 180ms; }
+        .delay-3 { transition-delay: 270ms; }
+        .delay-4 { transition-delay: 360ms; }
+        .delay-5 { transition-delay: 450ms; }
+        .delay-6 { transition-delay: 540ms; }
+
+        @keyframes barPulse {
+            0%, 100% { transform: scaleY(0.54); opacity: 0.48; }
+            50% { transform: scaleY(1); opacity: 1; }
+        }
+
+        @keyframes orbBreathe {
+            0%, 100% { transform: scale(0.985); }
+            50% { transform: scale(1.015); }
+        }
+
+        /* ===========================================
+           BRAND MARK + WAVEFORM
+           =========================================== */
+        .dialai-lockup {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            color: currentColor;
+        }
+
+        .voice-mark {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .voice-mark i {
+            width: 4px;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .voice-mark i:nth-child(1) { height: 14px; }
+        .voice-mark i:nth-child(2) { height: 28px; }
+        .voice-mark i:nth-child(3) { height: 20px; }
+
+        .dialai-wordmark {
+            font-size: 30px;
+            font-weight: 600;
+            letter-spacing: -0.035em;
+        }
+
+        .waveform {
+            height: 82px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .waveform span {
+            width: 6px;
+            height: var(--h);
+            border-radius: 999px;
+            background: currentColor;
+            transform-origin: center;
+            animation: barPulse 2.8s ease-in-out infinite;
+            animation-delay: var(--d);
+        }
+
+        /* ===========================================
+           SLIDE 01 — OPENING COVER
+           Product promise + three-step delegation proof.
+           =========================================== */
+        .s0 .slide-shell {
+            display: grid;
+            grid-template-columns: 1.08fr 0.92fr;
+            gap: 118px;
+            align-items: center;
+            padding-top: 122px;
+        }
+
+        .s0 .atmosphere {
+            display: none;
+        }
+
+        .cover-copy {
+            align-self: center;
+        }
+
+        .cover-lockup {
+            position: relative;
+            z-index: 2;
+        }
+
+        .cover-lockup .dialai-wordmark {
+            font-size: 42px;
+        }
+
+        .cover-title {
+            position: relative;
+            z-index: 2;
+            margin-top: 64px;
+            max-width: 940px;
+            font-family: var(--font-display);
+            font-size: 92px;
+            font-weight: 300;
+            line-height: 1.08;
+            letter-spacing: -0.052em;
+        }
+
+        .cover-sub {
+            position: relative;
+            z-index: 2;
+            margin-top: 42px;
+            max-width: 760px;
+            color: var(--body);
+            font-size: 29px;
+            line-height: 1.6;
+            word-break: keep-all;
+        }
+
+        .cover-tagline {
+            position: absolute;
+            right: 120px;
+            bottom: 82px;
+            color: var(--muted);
+            font-size: 22px;
+            letter-spacing: 0.02em;
+        }
+
+        .cover-example {
+            min-height: 480px;
+            padding: 48px 52px 44px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 22px;
+            color: var(--accent-ink);
+            background: var(--accent);
+        }
+
+        .cover-example-label {
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .cover-example blockquote {
+            margin-top: 76px;
+            font-family: var(--font-display);
+            font-size: 52px;
+            font-weight: 300;
+            line-height: 1.35;
+            letter-spacing: -0.042em;
+            word-break: keep-all;
+        }
+
+        .cover-mini-flow {
+            margin-top: auto;
+            padding-top: 28px;
+            display: grid;
+            grid-template-columns: 1fr 36px 1fr 36px 1fr;
+            align-items: center;
+            border-top: 1px solid rgba(23, 63, 53, 0.20);
+            font-size: 19px;
+            font-weight: 600;
+            line-height: 1.35;
+            text-align: center;
+            word-break: keep-all;
+        }
+
+        .cover-mini-flow .flow-arrow {
+            color: #426f63;
+            font-size: 24px;
+        }
+
+        /* ===========================================
+           SLIDE 02 — TECHNOLOGY
+           =========================================== */
+        .s1 .slide-shell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-top: 126px;
+        }
+
+        .s1-main {
+            display: grid;
+            grid-template-columns: 0.92fr 1.08fr;
+            gap: 118px;
+            align-items: start;
+        }
+
+        .s1 .display-copy {
+            margin-top: 34px;
+            max-width: 780px;
+            font-size: 70px;
+            line-height: 1.13;
+        }
+
+        .s1-sub {
+            margin-top: 38px;
+            max-width: 720px;
+            color: var(--body);
+            font-size: 27px;
+            line-height: 1.6;
+            word-break: keep-all;
+        }
+
+        .tech-rail {
+            border-top: 1px solid var(--hairline-strong);
+        }
+
+        .tech-row {
+            min-height: 112px;
+            padding: 0 22px;
+            display: grid;
+            grid-template-columns: 76px 220px 1fr;
+            align-items: center;
+            border-bottom: 1px solid var(--hairline);
+        }
+
+        .tech-row:last-child {
+            margin: 14px 0 0;
+            padding: 0 22px;
+            border-bottom: 0;
+            border-radius: 16px;
+            background: var(--accent-soft);
+        }
+
+        .tech-row-index {
+            color: var(--muted);
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+        }
+
+        .tech-row:last-child .tech-row-index {
+            color: #426f63;
+        }
+
+        .tech-row strong {
+            font-family: var(--font-display);
+            font-size: 35px;
+            font-weight: 300;
+            letter-spacing: -0.035em;
+        }
+
+        .tech-row span:last-child {
+            color: var(--body);
+            font-size: 23px;
+            word-break: keep-all;
+        }
+
+        .tech-question {
+            margin-top: 48px;
+            padding-top: 30px;
+            display: grid;
+            grid-template-columns: 0.92fr 1.08fr;
+            column-gap: 118px;
+            align-items: baseline;
+            border-top: 1px solid var(--hairline-strong);
+        }
+
+        .tech-question-label {
+            color: var(--muted);
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .tech-question p {
+            font-family: var(--font-display);
+            font-size: 31px;
+            font-weight: 300;
+            line-height: 1.5;
+            letter-spacing: -0.025em;
+            text-align: left;
+            word-break: keep-all;
+        }
+
+        /* ===========================================
+           SLIDE 02 — PROBLEM DISCOVERY
+           =========================================== */
+        .s2 .slide-shell {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: 120px;
+            align-items: center;
+            padding-top: 124px;
+        }
+
+        .s2 .slide-title {
+            font-size: 86px;
+            line-height: 1.16;
+        }
+
+        .s2-lead {
+            margin-top: 38px;
+            max-width: 680px;
+        }
+
+        .idea-list {
+            border-top: 1px solid var(--hairline-strong);
+        }
+
+        .idea-row {
+            min-height: 104px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--hairline);
+            color: var(--muted-soft);
+            font-size: 31px;
+            letter-spacing: -0.02em;
+        }
+
+        .idea-row .idea-index {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+        }
+
+        .idea-row.focus {
+            min-height: 136px;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 56px;
+            font-weight: 300;
+        }
+
+        .idea-row.focus .arrow {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--accent-ink);
+            font-family: var(--font-body);
+            font-size: 30px;
+            background: var(--accent);
+        }
+
+        /* ===========================================
+           SLIDE 03 — PERSONAL PAIN LOOP
+           =========================================== */
+        .s3 .slide-shell {
+            padding-top: 216px;
+        }
+
+        .s3 .slide-title {
+            font-size: 84px;
+        }
+
+        .pain-flow {
+            position: relative;
+            margin-top: 98px;
+            display: grid;
+            grid-template-columns: repeat(11, auto);
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pain-step {
+            width: 202px;
+            height: 150px;
+            padding: 26px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-top: 1px solid var(--hairline-strong);
+            border-bottom: 1px solid var(--hairline-strong);
+        }
+
+        .pain-step small {
+            color: var(--muted);
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+        }
+
+        .pain-step strong {
+            font-size: 31px;
+            font-weight: 500;
+            letter-spacing: -0.03em;
+            white-space: nowrap;
+        }
+
+        .pain-step.fail {
+            border-color: var(--rose);
+            background: rgba(232, 184, 196, 0.13);
+        }
+
+        .pain-arrow {
+            color: var(--muted-soft);
+            font-size: 30px;
+        }
+
+        .pain-return {
+            margin: 34px 12px 0 auto;
+            width: 475px;
+            padding-top: 18px;
+            border-top: 1px dashed var(--hairline-strong);
+            color: var(--muted);
+            font-size: 20px;
+            text-align: right;
+        }
+
+        .simple-ask {
+            margin-top: 78px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 50px;
+            font-weight: 300;
+            letter-spacing: -0.035em;
+        }
+
+        .simple-ask::before {
+            content: "";
+            width: 74px;
+            height: 1px;
+            flex: 0 0 auto;
+            background: var(--ink);
+        }
+
+        /* ===========================================
+           SLIDE 04 — PROBLEM SIZE
+           =========================================== */
+        .s4 .slide-shell {
+            padding-top: 208px;
+        }
+
+        .stats-grid {
+            margin-top: 82px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid var(--hairline-strong);
+            border-bottom: 1px solid var(--hairline-strong);
+        }
+
+        .stat {
+            min-height: 380px;
+            padding: 56px 48px 50px;
+        }
+
+        .stat + .stat {
+            border-left: 1px solid var(--hairline);
+        }
+
+        .stat-number {
+            font-family: var(--font-display);
+            font-size: 124px;
+            font-weight: 300;
+            line-height: 1;
+            letter-spacing: -0.06em;
+        }
+
+        .stat-base {
+            margin-top: 32px;
+            color: var(--muted);
+            font-size: 21px;
+        }
+
+        .stat-meaning {
+            margin-top: 10px;
+            max-width: 390px;
+            font-size: 30px;
+            font-weight: 500;
+            line-height: 1.42;
+            letter-spacing: -0.025em;
+            word-break: keep-all;
+        }
+
+        .stats-conclusion {
+            margin-top: 52px;
+            font-family: var(--font-display);
+            font-size: 45px;
+            font-weight: 300;
+            letter-spacing: -0.035em;
+        }
+
+        /* ===========================================
+           SLIDE 06 — PROBLEM TENSION
+           Split from the statistics slide.
+           =========================================== */
+        .s4b .slide-shell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-top: 120px;
+        }
+
+        .tension-grid {
+            display: grid;
+            grid-template-columns: 0.88fr 1.12fr;
+            gap: 92px;
+            align-items: stretch;
+        }
+
+        .tension-side {
+            min-height: 470px;
+            padding: 44px 50px;
+            border-top: 1px solid var(--hairline-strong);
+            border-bottom: 1px solid var(--hairline-strong);
+        }
+
+        .tension-side:last-child {
+            color: var(--accent-ink);
+            border-color: var(--accent);
+            border-radius: 22px;
+            background: var(--accent);
+        }
+
+        .tension-label {
+            color: var(--muted);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .tension-side:last-child .tension-label {
+            color: #426f63;
+        }
+
+        .tension-copy {
+            margin-top: 86px;
+            font-family: var(--font-display);
+            font-size: 66px;
+            font-weight: 300;
+            line-height: 1.22;
+            letter-spacing: -0.045em;
+            word-break: keep-all;
+        }
+
+        .tension-answer {
+            margin-top: 54px;
+            font-size: 31px;
+            font-weight: 500;
+            letter-spacing: -0.025em;
+            text-align: center;
+        }
+
+        /* ===========================================
+           SLIDE 07 — SOLUTION
+           =========================================== */
+        .s5 .slide-shell {
+            padding-top: 126px;
+        }
+
+        .s5-title-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .s5-title-row .body-copy {
+            max-width: 470px;
+            padding-bottom: 8px;
+            font-size: 26px;
+        }
+
+        .command-quote {
+            margin-top: 58px;
+            padding: 31px 42px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.66);
+            font-size: 34px;
+            font-weight: 500;
+            letter-spacing: -0.025em;
+        }
+
+        .command-dot {
+            width: 12px;
+            height: 12px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 9px var(--surface-strong);
+        }
+
+        .solution-flow {
+            margin-top: 58px;
+            display: grid;
+            grid-template-columns: 1fr 86px 1fr 86px 1fr;
+            align-items: stretch;
+        }
+
+        .solution-stage {
+            min-height: 302px;
+            padding: 38px;
+            border-top: 1px solid var(--hairline-strong);
+            border-bottom: 1px solid var(--hairline-strong);
+        }
+
+        .solution-stage.agent {
+            border: 0;
+            border-radius: 22px;
+            background: var(--accent);
+            color: var(--accent-ink);
+        }
+
+        .solution-stage .stage-no {
+            color: var(--muted);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.13em;
+        }
+
+        .solution-stage.agent .stage-no {
+            color: #426f63;
+        }
+
+        .solution-stage h3 {
+            margin-top: 68px;
+            font-family: var(--font-display);
+            font-size: 46px;
+            font-weight: 300;
+            letter-spacing: -0.04em;
+        }
+
+        .solution-stage p {
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 22px;
+            line-height: 1.5;
+            word-break: keep-all;
+        }
+
+        .solution-stage.agent p {
+            color: #31594e;
+        }
+
+        .solution-arrow {
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            font-size: 34px;
+        }
+
+        .solution-thesis {
+            margin-top: 38px;
+            color: var(--ink);
+            font-size: 27px;
+            font-weight: 500;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+
+        /* ===========================================
+           SLIDE 08 — SOLUTION THESIS
+           Split from the solution process slide.
+           =========================================== */
+        .s5b .slide-shell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .s5b {
+            background: var(--accent-soft);
+        }
+
+        .s5b .atmosphere {
+            width: 760px;
+            height: 760px;
+            left: 580px;
+            top: 160px;
+            opacity: 0.25;
+            filter: blur(28px);
+        }
+
+        .thesis-kicker {
+            position: relative;
+            z-index: 2;
+            color: #426f63;
+            font-size: 19px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .thesis-copy {
+            position: relative;
+            z-index: 2;
+            margin-top: 42px;
+            font-family: var(--font-display);
+            font-size: 88px;
+            font-weight: 300;
+            line-height: 1.2;
+            letter-spacing: -0.047em;
+        }
+
+        .thesis-foot {
+            position: relative;
+            z-index: 2;
+            margin-top: 50px;
+            color: #31594e;
+            font-size: 27px;
+            letter-spacing: -0.02em;
+        }
+
+        /* ===========================================
+           SLIDE 06 — CORE CONCEPT
+           =========================================== */
+        .s6 .slide-shell {
+            padding-top: 126px;
+        }
+
+        .concept-grid {
+            margin-top: 72px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 34px;
+        }
+
+        .concept-side {
+            min-height: 505px;
+            padding: 50px 54px;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.34);
+        }
+
+        .concept-side.strong {
+            color: var(--accent-ink);
+            border-color: var(--accent);
+            background: var(--accent);
+        }
+
+        .concept-label {
+            color: var(--muted);
+            font-size: 19px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+        }
+
+        .concept-side.strong .concept-label {
+            color: #426f63;
+        }
+
+        .concept-word {
+            margin-top: 58px;
+            font-family: var(--font-display);
+            font-size: 66px;
+            font-weight: 300;
+            letter-spacing: -0.05em;
+        }
+
+        .concept-main {
+            margin-top: 28px;
+            font-size: 34px;
+            font-weight: 500;
+            line-height: 1.42;
+            letter-spacing: -0.03em;
+            word-break: keep-all;
+        }
+
+        .concept-detail {
+            margin-top: 48px;
+            color: var(--muted);
+            font-size: 24px;
+            line-height: 1.55;
+            word-break: keep-all;
+        }
+
+        .concept-side.strong .concept-detail {
+            color: #31594e;
+        }
+
+        /* ===========================================
+           SLIDE 07 — CORE FEATURES
+           =========================================== */
+        .s7 .slide-shell {
+            padding-top: 216px;
+        }
+
+        .feature-flow {
+            position: relative;
+            margin-top: 106px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 26px;
+        }
+
+        .feature-flow::before {
+            content: "";
+            position: absolute;
+            top: 36px;
+            left: 36px;
+            right: 36px;
+            height: 1px;
+            background: var(--hairline-strong);
+            z-index: -1;
+        }
+
+        .feature-step {
+            min-height: 360px;
+            padding-right: 18px;
+        }
+
+        .feature-number {
+            width: 72px;
+            height: 72px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 50%;
+            color: var(--muted);
+            font-size: 19px;
+            font-weight: 600;
+            background: var(--canvas);
+        }
+
+        .feature-step:last-child .feature-number {
+            color: var(--accent-ink);
+            border-color: var(--accent);
+            background: var(--accent);
+        }
+
+        .feature-step h3 {
+            margin-top: 40px;
+            font-size: 30px;
+            font-weight: 500;
+            letter-spacing: -0.03em;
+            white-space: nowrap;
+        }
+
+        .feature-step p {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 22px;
+            line-height: 1.55;
+            word-break: keep-all;
+        }
+
+        .feature-extra {
+            margin-top: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 18px;
+            border-radius: 999px;
+            color: var(--ink);
+            font-size: 19px;
+            font-weight: 600;
+            background: var(--surface-strong);
+        }
+
+        /* ===========================================
+           SLIDE 08 — DEMO MOCKUP
+           =========================================== */
+        .s8 .slide-shell {
+            padding-top: 152px;
+        }
+
+        .demo-grid {
+            margin-top: 54px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 34px;
+        }
+
+        .demo-frame {
+            height: 610px;
+            overflow: hidden;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 20px;
+            background: var(--surface);
+            box-shadow: 0 6px 26px rgba(12, 10, 9, 0.04);
+        }
+
+        .demo-bar {
+            height: 62px;
+            padding: 0 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--hairline);
+            color: var(--muted);
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+        }
+
+        .demo-content {
+            height: calc(100% - 62px);
+            padding: 34px;
+        }
+
+        .demo-command {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .demo-command .prompt {
+            padding: 26px;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 14px;
+            font-size: 26px;
+            line-height: 1.48;
+            letter-spacing: -0.02em;
+            word-break: keep-all;
+        }
+
+        .demo-command .clarify {
+            margin-top: 26px;
+            color: var(--muted);
+            font-size: 21px;
+            line-height: 1.5;
+        }
+
+        .demo-command .send {
+            margin-top: auto;
+            margin-bottom: 24px;
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            color: var(--accent-ink);
+            font-size: 20px;
+            font-weight: 600;
+            background: var(--accent);
+        }
+
+        .demo-live {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .mini-orb {
+            position: relative;
+            width: 170px;
+            height: 170px;
+            margin-top: 4px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--hairline);
+            border-radius: 50%;
+        }
+
+        .mini-orb .atmosphere {
+            width: 132px;
+            height: 132px;
+        }
+
+        .demo-live .waveform {
+            width: 350px;
+            height: 48px;
+            margin-top: 14px;
+            color: var(--ink);
+        }
+
+        .live-steps {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .live-step {
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-top: 1px solid var(--hairline);
+            color: var(--muted);
+            font-size: 18px;
+        }
+
+        .live-step::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            flex: 0 0 auto;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 50%;
+        }
+
+        .live-step.done {
+            color: var(--ink);
+        }
+
+        .live-step.done::before {
+            border-color: var(--accent);
+            background: var(--accent);
+        }
+
+        .live-choice {
+            width: 100%;
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .live-choice span {
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .live-choice .selected {
+            color: var(--accent-ink);
+            border-color: var(--accent);
+            background: var(--accent);
+        }
+
+        .demo-result {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-check {
+            width: 76px;
+            height: 76px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            color: var(--accent-ink);
+            font-size: 34px;
+            background: var(--accent);
+        }
+
+        .demo-result h3 {
+            margin-top: 32px;
+            font-family: var(--font-display);
+            font-size: 44px;
+            font-weight: 300;
+            letter-spacing: -0.04em;
+        }
+
+        .date-change {
+            margin-top: 48px;
+            border-top: 1px solid var(--hairline-strong);
+            border-bottom: 1px solid var(--hairline-strong);
+        }
+
+        .date-row {
+            min-height: 94px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .date-row + .date-row {
+            border-top: 1px solid var(--hairline);
+        }
+
+        .date-row span {
+            color: var(--muted);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+        }
+
+        .date-row strong {
+            font-size: 24px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .result-summary {
+            margin-top: auto;
+            color: var(--muted);
+            font-size: 20px;
+            line-height: 1.5;
+        }
+
+        /* ===========================================
+           SLIDE 09 — COMPETITION
+           =========================================== */
+        .s9 .slide-shell {
+            padding-top: 152px;
+        }
+
+        .s9 .slide-title {
+            font-size: 68px;
+        }
+
+        .matrix {
+            margin-top: 52px;
+            border-top: 1px solid var(--hairline-strong);
+            border-left: 1px solid var(--hairline-strong);
+        }
+
+        .matrix-row {
+            display: grid;
+            grid-template-columns: 1.32fr repeat(3, 0.76fr);
+        }
+
+        .matrix-cell {
+            min-height: 78px;
+            padding: 0 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--hairline-strong);
+            border-bottom: 1px solid var(--hairline-strong);
+            font-size: 22px;
+            text-align: center;
+            word-break: keep-all;
+        }
+
+        .matrix-row:not(.matrix-head) .matrix-cell {
+            min-height: 94px;
+        }
+
+        .matrix-cell:first-child {
+            justify-content: flex-start;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .matrix-head .matrix-cell {
+            color: var(--muted);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .matrix-cell.dialai {
+            color: var(--accent-ink);
+            border-color: #8dcfbc;
+            background: var(--accent);
+        }
+
+        .matrix-mark {
+            font-size: 29px;
+            font-weight: 600;
+        }
+
+        .matrix-mark.muted {
+            color: var(--muted-soft);
+            font-weight: 400;
+        }
+
+        .competition-thesis {
+            margin-top: 36px;
+            font-size: 28px;
+            font-weight: 500;
+            letter-spacing: -0.025em;
+            text-align: right;
+        }
+
+        /* ===========================================
+           SLIDE 10 — VALUE & VIABILITY
+           =========================================== */
+        .s10 .slide-shell {
+            display: grid;
+            grid-template-columns: 0.83fr 1.17fr;
+            gap: 110px;
+            align-items: center;
+            padding-top: 124px;
+        }
+
+        .s10 .slide-title {
+            font-size: 68px;
+        }
+
+        .s10-lead {
+            margin-top: 42px;
+            max-width: 610px;
+            font-size: 27px;
+        }
+
+        .viability-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-top: 1px solid var(--hairline-strong);
+            border-left: 1px solid var(--hairline-strong);
+        }
+
+        .viability-item {
+            min-height: 280px;
+            padding: 38px 42px;
+            border-right: 1px solid var(--hairline-strong);
+            border-bottom: 1px solid var(--hairline-strong);
+        }
+
+        .viability-item small {
+            color: var(--muted);
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .viability-item h3 {
+            margin-top: 30px;
+            font-size: 30px;
+            font-weight: 500;
+            line-height: 1.4;
+            letter-spacing: -0.03em;
+            word-break: keep-all;
+        }
+
+        .viability-item p {
+            margin-top: 15px;
+            color: var(--muted);
+            font-size: 21px;
+            line-height: 1.52;
+            word-break: keep-all;
+        }
+
+        .tech-stack {
+            margin-top: 34px;
+            color: var(--muted);
+            font-size: 19px;
+            letter-spacing: 0.03em;
+            text-align: right;
+        }
+
+        /* ===========================================
+           SLIDE 14 — INSTITUTION-SPECIFIC DATA
+           Split from the original moat slide.
+           =========================================== */
+        .s11a .slide-shell {
+            display: grid;
+            grid-template-columns: 0.92fr 1.08fr;
+            gap: 104px;
+            align-items: center;
+            padding-top: 124px;
+        }
+
+        .s11a .slide-title {
+            font-size: 72px;
+        }
+
+        .s11a .body-copy {
+            margin-top: 38px;
+            max-width: 670px;
+        }
+
+        .data-asset-name {
+            margin-top: 54px;
+            padding-top: 28px;
+            border-top: 1px solid var(--hairline-strong);
+            color: var(--ink);
+            font-size: 25px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+        }
+
+        .moat-data-list {
+            border-top: 1px solid var(--hairline-strong);
+        }
+
+        .moat-data-row {
+            min-height: 108px;
+            padding: 0 14px;
+            display: grid;
+            grid-template-columns: 72px 1fr;
+            align-items: center;
+            border-bottom: 1px solid var(--hairline);
+        }
+
+        .moat-data-row small {
+            color: var(--muted);
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+        }
+
+        .moat-data-row strong {
+            font-size: 28px;
+            font-weight: 500;
+            letter-spacing: -0.025em;
+            word-break: keep-all;
+        }
+
+        /* ===========================================
+           SLIDE 15 — DATA FLYWHEEL
+           =========================================== */
+        .s11 .slide-shell {
+            display: grid;
+            grid-template-columns: 0.92fr 1.08fr;
+            gap: 100px;
+            align-items: center;
+            padding-top: 124px;
+        }
+
+        .s11-copy .body-copy {
+            margin-top: 38px;
+            max-width: 650px;
+        }
+
+        .s11 .slide-title {
+            font-size: 72px;
+        }
+
+        .moat-thesis {
+            margin-top: 60px;
+            padding-top: 28px;
+            border-top: 1px solid var(--hairline-strong);
+            font-family: var(--font-display);
+            font-size: 36px;
+            font-weight: 300;
+            line-height: 1.42;
+            letter-spacing: -0.035em;
+        }
+
+        .flywheel-cycle {
+            position: relative;
+            width: 760px;
+            height: 620px;
+            margin: 0 auto;
+        }
+
+        .cycle-links {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            pointer-events: none;
+        }
+
+        .cycle-link {
+            fill: none;
+            stroke: var(--accent-ink);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-opacity: 0.42;
+            marker-end: url("#cycle-arrow-15");
+            vector-effect: non-scaling-stroke;
+        }
+
+        .cycle-arrow-head {
+            fill: var(--accent-ink);
+            opacity: 0.62;
+        }
+
+        .cycle-steps {
+            list-style: none;
+        }
+
+        .cycle-step {
+            position: absolute;
+            z-index: 2;
+            width: 280px;
+            height: 116px;
+            padding: 0 22px;
+            display: grid;
+            grid-template-columns: 46px 1fr;
+            gap: 14px;
+            align-items: center;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.86);
+        }
+
+        .cycle-step-1 { top: 24px; left: 0; }
+        .cycle-step-2 { top: 24px; right: 0; }
+        .cycle-step-3 { right: 0; bottom: 24px; }
+        .cycle-step-4 { bottom: 24px; left: 0; }
+
+        .cycle-no {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            color: var(--accent-ink);
+            background: var(--accent-soft);
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+        }
+
+        .cycle-step strong {
+            font-size: 24px;
+            font-weight: 500;
+            line-height: 1.35;
+            letter-spacing: -0.025em;
+            word-break: keep-all;
+        }
+
+        .cycle-core {
+            position: absolute;
+            top: 231px;
+            left: 240px;
+            z-index: 1;
+            width: 280px;
+            height: 158px;
+            padding: 24px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            color: var(--accent-ink);
+            background: var(--accent);
+            text-align: center;
+        }
+
+        .cycle-core small {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+        }
+
+        .cycle-core strong {
+            margin-top: 13px;
+            font-size: 27px;
+            font-weight: 500;
+            line-height: 1.32;
+            letter-spacing: -0.025em;
+        }
+
+        /* ===========================================
+           SLIDE 12 — VISION
+           =========================================== */
+        .s12 .slide-shell {
+            padding-top: 184px;
+        }
+
+        .s12 .atmosphere {
+            width: 640px;
+            height: 640px;
+            right: 0;
+            top: -180px;
+        }
+
+        .vision-track {
+            position: relative;
+            margin-top: 106px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 50px;
+        }
+
+        .vision-track::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 42px;
+            height: 1px;
+            background: var(--hairline-strong);
+        }
+
+        .vision-step {
+            position: relative;
+            padding-top: 86px;
+        }
+
+        .vision-step::before {
+            content: "";
+            position: absolute;
+            top: 30px;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 50%;
+            background: var(--canvas);
+        }
+
+        .vision-step:last-child::before {
+            border-color: var(--accent);
+            background: var(--accent);
+        }
+
+        .vision-label {
+            color: var(--muted);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.13em;
+        }
+
+        .vision-step h3 {
+            margin-top: 26px;
+            font-family: var(--font-display);
+            font-size: 49px;
+            font-weight: 300;
+            letter-spacing: -0.045em;
+        }
+
+        .vision-step p {
+            margin-top: 20px;
+            max-width: 440px;
+            color: var(--muted);
+            font-size: 23px;
+            line-height: 1.55;
+            word-break: keep-all;
+        }
+
+        .vision-close {
+            margin-top: 76px;
+            font-family: var(--font-display);
+            font-size: 48px;
+            font-weight: 300;
+            letter-spacing: -0.035em;
+        }
+
+        /* ===========================================
+           SLIDE 13 — CLOSING
+           =========================================== */
+        .s13 .slide-shell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .s13 .atmosphere {
+            width: 710px;
+            height: 710px;
+            left: 605px;
+            top: 135px;
+            opacity: 0.28;
+            filter: blur(30px);
+        }
+
+        .closing-kicker {
+            color: var(--muted-soft);
+            font-size: 19px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .closing-copy {
+            position: relative;
+            z-index: 2;
+            margin-top: 38px;
+            font-size: 96px;
+            line-height: 1.18;
+        }
+
+        .closing-lockup {
+            position: absolute;
+            left: 120px;
+            bottom: 80px;
+            z-index: 2;
+        }
+
+        .closing-tagline {
+            position: absolute;
+            right: 120px;
+            bottom: 86px;
+            color: var(--muted-soft);
+            font-size: 24px;
+            letter-spacing: 0.01em;
+        }
+
+        /* ===========================================
+           DECK CHROME
+           Outside the 1920×1080 stage.
+           =========================================== */
+        .deck-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            z-index: 3000;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .deck-progress-bar {
+            width: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.72);
+            transition: width 300ms var(--ease-out-expo);
+        }
+
+        .deck-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 999px;
+            color: rgba(255, 255, 255, 0.88);
+            background: rgba(12, 10, 9, 0.72);
+            backdrop-filter: blur(14px);
+            opacity: 0;
+            transition: opacity 220ms ease;
+        }
+
+        .deck-controls:hover,
+        .deck-controls:focus-within {
+            opacity: 1;
+        }
+
+        .deck-controls button {
+            width: 36px;
+            height: 34px;
+            border: 0;
+            border-radius: 999px;
+            color: inherit;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .deck-controls button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .deck-count {
+            min-width: 76px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
+
+        .deck-hint {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 1100;
+            color: rgba(255, 255, 255, 0.62);
+            font-size: 12px;
+            letter-spacing: 0.03em;
+            opacity: 0;
+            transition: opacity 500ms ease;
+        }
+
+        .deck-hint.fade {
+            opacity: 0;
+        }
+
+        /* ===========================================
+           SPEAKER NOTES PANEL
+           Toggle with N; hidden in normal presentation.
+           =========================================== */
+        .notes-panel {
+            position: fixed;
+            left: 24px;
+            right: 24px;
+            bottom: 74px;
+            z-index: 5000;
+            max-width: 920px;
+            max-height: 42vh;
+            margin: 0 auto;
+            padding: 28px 32px 30px;
+            overflow: auto;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            color: #f5f5f5;
+            background: rgba(12, 10, 9, 0.94);
+            backdrop-filter: blur(18px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(14px);
+            transition:
+                opacity 220ms ease,
+                transform 220ms ease,
+                visibility 220ms;
+        }
+
+        .notes-panel.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .notes-title {
+            padding-right: 46px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .notes-body {
+            margin-top: 16px;
+            color: #d6d3d1;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-line;
+        }
+
+        .notes-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 34px;
+            height: 34px;
+            border: 0;
+            border-radius: 50%;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+        }
+
+        /* ===========================================
+           INLINE EDITING
+           Hover top-left or press E.
+           =========================================== */
+        .edit-hotzone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            z-index: 10000;
+            cursor: pointer;
+        }
+
+        .edit-toggle {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            width: 42px;
+            height: 42px;
+            z-index: 10001;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            color: #fff;
+            background: rgba(12, 10, 9, 0.82);
+            backdrop-filter: blur(14px);
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .edit-toggle.show,
+        .edit-toggle.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .edit-panel {
+            position: fixed;
+            top: 18px;
+            left: 72px;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px 6px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 999px;
+            color: #fff;
+            background: rgba(12, 10, 9, 0.88);
+            backdrop-filter: blur(14px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(-8px);
+            transition:
+                opacity 220ms ease,
+                transform 220ms ease,
+                visibility 220ms;
+        }
+
+        body.editing .edit-panel {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .edit-status {
+            min-width: 72px;
+            color: #d6d3d1;
+            font-size: 12px;
+        }
+
+        .edit-panel button {
+            min-width: 72px;
+            height: 32px;
+            padding: 0 12px;
+            border: 0;
+            border-radius: 999px;
+            color: var(--ink);
+            font-size: 12px;
+            font-weight: 600;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        body.editing [data-editable] {
+            cursor: text;
+            outline: 1px dashed rgba(12, 10, 9, 0.35);
+            outline-offset: 5px;
+        }
+
+        body.editing .dark [data-editable] {
+            outline-color: rgba(255, 255, 255, 0.35);
+        }
+
+        body.editing [data-editable]:focus {
+            outline: 2px solid rgba(12, 10, 9, 0.72);
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        body.editing .dark [data-editable]:focus {
+            outline-color: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* ===========================================
+           PRINT + SMALL VIEWPORT CHROME
+           Stage content never reflows.
+           =========================================== */
+        @media print {
+            .deck-progress,
+            .deck-hint,
+            .edit-hotzone,
+            .edit-toggle,
+            .edit-panel,
+            .notes-panel {
+                display: none !important;
+            }
+
+            .reveal,
+            .reveal-left,
+            .reveal-scale {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .waveform span,
+            .voice-orb .atmosphere {
+                animation: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ===========================================
+         FIXED PRESENTATION STAGE
+         =========================================== -->
+    <div class="deck-viewport" id="deckViewport">
+        <main class="deck-stage" id="deckStage" aria-live="polite">
+
+            <!-- SLIDE 01 — OPENING COVER -->
+            <section class="slide s0 active" data-slide="1" data-title="Opening" role="group" aria-roledescription="slide" aria-label="1 of 17">
+                <div class="slide-topline">
+                    <span>01 · Opening</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="atmosphere" aria-hidden="true"></div>
+                <div class="slide-shell">
+                    <div class="cover-copy">
+                        <div class="dialai-lockup cover-lockup reveal">
+                            <span class="voice-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+                            <span class="dialai-wordmark" data-editable>DialAI</span>
+                        </div>
+                        <h1 class="cover-title">
+                            <span class="line reveal delay-1" data-editable>전화, 이제 AI에게</span>
+                            <span class="line reveal delay-2" data-editable>맡기세요</span>
+                        </h1>
+                    </div>
+                    <div class="cover-example reveal-scale delay-2">
+                        <p class="cover-example-label" data-editable>한 문장으로 시작</p>
+                        <blockquote data-editable>“병원 예약을 다음 주 금요일 오후로 바꿔 줘.”</blockquote>
+                        <div class="cover-mini-flow" aria-label="요청부터 결과까지">
+                            <span data-editable>업무 요청</span>
+                            <span class="flow-arrow" aria-hidden="true">→</span>
+                            <span data-editable>AI 통화</span>
+                            <span class="flow-arrow" aria-hidden="true">→</span>
+                            <span data-editable>처리 결과</span>
+                        </div>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    안녕하세요.
+
+                    저희는 AI가 사용자를 대신해 실제 전화 업무를 처리하는 DialAI를 만들었습니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 02 — TECHNOLOGY -->
+            <section class="slide s1" data-slide="2" data-title="기술의 등장" role="group" aria-roledescription="slide" aria-label="2 of 17">
+                <div class="slide-topline">
+                    <span>02 · Technology</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <div class="s1-main">
+                        <div class="s1-copy">
+                            <p class="eyebrow reveal" data-editable>Realtime Voice AI</p>
+                            <h1 class="display-copy">
+                                <span class="line reveal delay-1" data-editable>이제 AI와</span>
+                                <span class="line reveal delay-2" data-editable>실시간 대화가 가능하다</span>
+                            </h1>
+                            <p class="s1-sub reveal delay-3" data-editable>
+                                상대의 말을 실시간으로 듣고, 맥락을 판단하고,<br>
+                                상황에 맞게 자연스럽게 응답합니다.
+                            </p>
+                        </div>
+                        <div class="tech-rail reveal-scale delay-2" aria-label="실시간 음성 AI 역량">
+                            <div class="tech-row">
+                                <span class="tech-row-index">01</span>
+                                <strong data-editable>Listen</strong>
+                                <span data-editable>상대의 말을 실시간으로 이해</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-row-index">02</span>
+                                <strong data-editable>Think</strong>
+                                <span data-editable>요청과 대화 맥락을 판단</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-row-index">03</span>
+                                <strong data-editable>Speak</strong>
+                                <span data-editable>상황에 맞춰 자연스럽게 응답</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-row-index">04</span>
+                                <strong data-editable>Act</strong>
+                                <span data-editable>전화 흐름을 이어 실제 업무 수행</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tech-question reveal delay-4">
+                        <span class="tech-question-label">The question</span>
+                        <p data-editable>기술은 준비됐습니다. 이제 남은 질문은 “무슨 일을 맡길 것인가?”</p>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    최근 OpenAI Realtime 모델을 보면서 굉장히 강한 인상을 받았습니다.
+
+                    이제 AI는 텍스트로 답변만 하는 게 아니라, 사람의 말을 실시간으로 듣고, 판단하고, 다시 자연스럽게 말할 수 있습니다.
+
+                    저희는 이 기술을 보면서 한 가지 질문에서 시작했습니다.
+
+                    “이 정도 기술이면, 단순히 대화만 잘하는 게 아니라 사람이 하기 싫어하는 실제 업무 하나를 통째로 대신할 수 있지 않을까?”
+                </aside>
+            </section>
+
+            <!-- SLIDE 03 — PROBLEM DISCOVERY -->
+            <section class="slide s2" data-slide="3" data-title="문제 탐색" role="group" aria-roledescription="slide" aria-label="3 of 17">
+                <div class="slide-topline">
+                    <span>03 · Discovery</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <div>
+                        <p class="eyebrow reveal" data-editable>Where to begin</p>
+                        <h2 class="slide-title">
+                            <span class="line reveal delay-1" data-editable>이 기술로</span>
+                            <span class="line reveal delay-2" data-editable>어떤 진짜 문제를 풀까?</span>
+                        </h2>
+                        <p class="body-copy s2-lead reveal delay-3" data-editable>
+                            이미 있는 기능 하나를 더 만드는 대신,<br>
+                            사람들이 피하고 싶은 일을 찾았습니다.
+                        </p>
+                    </div>
+                    <div class="idea-list reveal-scale delay-2">
+                        <div class="idea-row"><span class="idea-index">01</span><span data-editable>AI 상담원</span></div>
+                        <div class="idea-row"><span class="idea-index">02</span><span data-editable>전화 대신 받기</span></div>
+                        <div class="idea-row"><span class="idea-index">03</span><span data-editable>통화 요약</span></div>
+                        <div class="idea-row"><span class="idea-index">04</span><span data-editable>예약 자동화</span></div>
+                        <div class="idea-row focus">
+                            <span class="idea-index">Focus</span>
+                            <span data-editable>전화 업무</span>
+                            <span class="arrow" aria-hidden="true">→</span>
+                        </div>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    처음에는 여러 아이디어를 고민했습니다.
+
+                    AI 상담원도 있고, 전화 대신 받기도 있고, 통화 요약도 이미 있습니다.
+
+                    그런데 이런 기능을 하나 더 만드는 것보다, “사람들이 정말 하기 싫어하지만, 아직도 어쩔 수 없이 직접 해야 하는 일이 뭘까?”를 찾는 게 더 중요하다고 생각했습니다.
+
+                    그리고 정말 사소한 경험에서 문제를 발견했습니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 04 — PERSONAL PAIN LOOP -->
+            <section class="slide s3" data-slide="4" data-title="개인적 문제 발견" role="group" aria-roledescription="slide" aria-label="4 of 17">
+                <div class="slide-topline">
+                    <span>04 · Pain</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <h2 class="slide-title">
+                        <span class="line reveal" data-editable>병원 예약 하나 바꾸는데</span>
+                        <span class="line reveal delay-1" data-editable>왜 이렇게 힘들지?</span>
+                    </h2>
+
+                    <div class="pain-flow reveal delay-2">
+                        <div class="pain-step"><small>01</small><strong data-editable>전화</strong></div>
+                        <span class="pain-arrow">→</span>
+                        <div class="pain-step"><small>02</small><strong data-editable>ARS</strong></div>
+                        <span class="pain-arrow">→</span>
+                        <div class="pain-step"><small>03</small><strong data-editable>대기</strong></div>
+                        <span class="pain-arrow">→</span>
+                        <div class="pain-step fail"><small>04</small><strong data-editable>연결 실패</strong></div>
+                        <span class="pain-arrow">→</span>
+                        <div class="pain-step"><small>05</small><strong data-editable>재시도</strong></div>
+                        <span class="pain-arrow">→</span>
+                        <div class="pain-step"><small>06</small><strong data-editable>다시 ARS</strong></div>
+                    </div>
+                    <div class="pain-return reveal delay-3" data-editable>연결되지 않으면 같은 과정을 다시 반복</div>
+                    <p class="simple-ask reveal delay-4" data-editable>“예약 날짜만 변경해 주세요.”</p>
+                </div>
+                <aside class="speaker-notes">
+                    최근에 병원 진료 예약을 변경해야 해서 직접 전화를 한 적이 있습니다.
+
+                    예약 날짜 하나만 바꾸면 되는 일이었습니다.
+
+                    그런데 실제 과정은 굉장히 길었습니다.
+
+                    전화를 걸고, ARS를 듣고, 번호를 누르고, 상담사를 기다리고, 연결이 안 되면 다시 전화해서 또 처음부터 반복해야 했습니다.
+
+                    그런데 정작 제가 상담사에게 하고 싶은 말은 한 문장이었습니다.
+
+                    “예약 날짜를 다음 주 금요일로 변경해 주세요.”
+
+                    그때 이런 생각이 들었습니다.
+
+                    “내가 전달할 내용은 이렇게 단순한데, 왜 이 모든 과정에 내가 계속 붙잡혀 있어야 하지?”
+                </aside>
+            </section>
+
+            <!-- SLIDE 05 — PROBLEM SIZE -->
+            <section class="slide s4" data-slide="5" data-title="문제의 크기" role="group" aria-roledescription="slide" aria-label="5 of 17">
+                <div class="slide-topline">
+                    <span>05 · Evidence</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <h2 class="slide-title">
+                        <span class="line reveal" data-editable>이건 개인적인</span>
+                        <span class="line reveal delay-1" data-editable>문제가 아니었습니다</span>
+                    </h2>
+                    <div class="stats-grid reveal delay-2">
+                        <article class="stat">
+                            <div class="stat-number" data-editable>54.8%</div>
+                            <div class="stat-base" data-editable>상담사 통화 경험자 중</div>
+                            <div class="stat-meaning" data-editable>연결까지 3분 이상 대기</div>
+                        </article>
+                        <article class="stat">
+                            <div class="stat-number" data-editable>75.4%</div>
+                            <div class="stat-base" data-editable>전화·ARS 불만족자 중</div>
+                            <div class="stat-meaning" data-editable>상담사 연결의 어려움</div>
+                        </article>
+                        <article class="stat">
+                            <div class="stat-number" data-editable>40.8%</div>
+                            <div class="stat-base" data-editable>Z세대 765명 중</div>
+                            <div class="stat-meaning" data-editable>긴장·불안·두려움 경험</div>
+                        </article>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    조사해 보니 이건 저만의 문제가 아니었습니다.
+
+                    국내 조사에서 상담사와 통화한 경험이 있는 사람 중 54.8%가 상담사 연결까지 3분 이상 기다린 경험이 있었습니다.
+
+                    그리고 전화나 ARS에 불만족한 사용자 중 75.4%가 상담사 연결의 어려움을 불만 원인으로 꼽았습니다.
+
+                    그런데 더 흥미로운 점이 있습니다.
+
+                    2024년 Z세대 765명을 대상으로 한 조사에서는 40.8%가 전화 통화에서 긴장이나 불안, 두려움을 경험한다고 응답했습니다.
+
+                    결국 이 문제는 이렇게 정리됩니다.
+
+                    [최종안 확인] 세 통계의 조사명, 조사 시점, 출처를 보강해야 합니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 06 — PROBLEM TENSION -->
+            <section class="slide s4b" data-slide="6" data-title="문제 정의" role="group" aria-roledescription="slide" aria-label="6 of 17">
+                <div class="slide-topline">
+                    <span>06 · Problem insight</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <div class="tension-grid">
+                        <article class="tension-side reveal-left">
+                            <p class="tension-label">HUMAN BEHAVIOR</p>
+                            <p class="tension-copy" data-editable>사람들은 전화를<br>부담스러워합니다</p>
+                        </article>
+                        <article class="tension-side reveal delay-1">
+                            <p class="tension-label">REALITY</p>
+                            <p class="tension-copy" data-editable>그런데 전화로만<br>처리해야 하는 업무는<br>남아 있습니다</p>
+                        </article>
+                    </div>
+                    <p class="tension-answer reveal delay-2" data-editable>그래서 사용자가 전화하지 않아도 되게 만들었습니다.</p>
+                </div>
+                <aside class="speaker-notes">
+                    사람들은 전화를 부담스러워합니다.
+
+                    그런데 여전히 전화로만 처리해야 하는 업무는 남아 있습니다.
+
+                    그래서 저희는 전화 자체를 없애는 대신, 사용자가 전화하지 않아도 되게 만들기로 했습니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 07 — SOLUTION FLOW -->
+            <section class="slide s5" data-slide="7" data-title="Solution" role="group" aria-roledescription="slide" aria-label="7 of 17">
+                <div class="slide-topline">
+                    <span>07 · Solution</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <div class="s5-title-row">
+                        <h2 class="slide-title">
+                            <span class="line reveal" data-editable>그래서 AI에게</span>
+                            <span class="line reveal delay-1" data-editable>전화 자체를 맡깁니다</span>
+                        </h2>
+                        <p class="body-copy reveal delay-2" data-editable>
+                            사용자는 처리할 업무만 말하면 됩니다.
+                        </p>
+                    </div>
+                    <div class="command-quote reveal delay-2">
+                        <span class="command-dot" aria-hidden="true"></span>
+                        <span data-editable>“병원 예약을 다음 주 금요일 오후로 바꿔 줘.”</span>
+                    </div>
+                    <div class="solution-flow reveal delay-3">
+                        <article class="solution-stage">
+                            <div class="stage-no">01 · REQUEST</div>
+                            <h3 data-editable>업무 요청</h3>
+                            <p data-editable>조건을 확인하고 필요한 정보를 정리</p>
+                        </article>
+                        <div class="solution-arrow">→</div>
+                        <article class="solution-stage agent">
+                            <div class="stage-no">02 · DIALAI</div>
+                            <h3 data-editable>AI가 직접 전화</h3>
+                            <p data-editable>ARS 처리부터 상담사 대화까지 수행</p>
+                        </article>
+                        <div class="solution-arrow">→</div>
+                        <article class="solution-stage">
+                            <div class="stage-no">03 · DONE</div>
+                            <h3 data-editable>업무 완료</h3>
+                            <p data-editable>통화 요약과 최종 처리 결과 전달</p>
+                        </article>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    저희가 만든 해결책이 DialAI입니다.
+
+                    사용자는 그냥 원하는 업무만 말하면 됩니다.
+
+                    예를 들어, “병원에 전화해서 다음 주 금요일 오후로 예약 변경해 줘.” 이렇게 요청합니다.
+
+                    그러면 AI가 먼저 필요한 정보가 있는지 확인합니다.
+
+                    조건이 애매하면 사용자에게 질문하고, 업무가 명확해지면 직접 전화를 겁니다.
+
+                    이후 ARS를 처리하고, 상담사를 기다리고, 상담사가 연결되면 AI가 직접 대화합니다.
+
+                    필요한 결정이 생기면 사용자에게 다시 질문하고, 업무가 끝나면 결과까지 정리해서 알려줍니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 08 — SOLUTION THESIS -->
+            <section class="slide s5b" data-slide="8" data-title="Solution definition" role="group" aria-roledescription="slide" aria-label="8 of 17">
+                <div class="slide-topline">
+                    <span>08 · Definition</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="atmosphere" aria-hidden="true"></div>
+                <div class="slide-shell">
+                    <p class="thesis-kicker reveal" data-editable>CALL DELEGATION</p>
+                    <h2 class="thesis-copy">
+                        <span class="line reveal delay-1" data-editable>AI가 전화하는 걸 도와주는 게 아니라,</span>
+                        <span class="line reveal delay-2" data-editable>전화로 해야 하는 일을 대신 끝냅니다.</span>
+                    </h2>
+                    <p class="thesis-foot reveal delay-3" data-editable>요청에서 결과까지, 사용자는 전화기를 붙잡지 않습니다.</p>
+                </div>
+                <aside class="speaker-notes">
+                    즉, AI가 전화하는 걸 도와주는 게 아니라, 전화로 해야 하는 일을 대신 끝내는 서비스입니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 09 — CORE CONCEPT -->
+            <section class="slide s6" data-slide="9" data-title="Core Concept" role="group" aria-roledescription="slide" aria-label="9 of 17">
+                <div class="slide-topline">
+                    <span>09 · Core concept</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <h2 class="slide-title compact">
+                        <span class="line reveal" data-editable>통화 보조가 아니라</span>
+                        <span class="line reveal delay-1" data-editable>통화 위임</span>
+                    </h2>
+                    <div class="concept-grid">
+                        <article class="concept-side reveal-left delay-2">
+                            <div class="concept-label">BEFORE</div>
+                            <div class="concept-word" data-editable>Assistance</div>
+                            <p class="concept-main" data-editable>AI가 내가 전화하는 과정을 도와준다</p>
+                            <p class="concept-detail" data-editable>ARS와 대기는 줄여도, 상담사 연결 뒤에는 결국 사용자가 통화를 이어갑니다.</p>
+                        </article>
+                        <article class="concept-side strong reveal delay-3">
+                            <div class="concept-label">DIALAI</div>
+                            <div class="concept-word" data-editable>Delegation</div>
+                            <p class="concept-main" data-editable>전화 업무 자체를 AI에게 맡긴다</p>
+                            <p class="concept-detail" data-editable>상담사 연결 뒤에도 AI가 직접 대화하고 업무 완료까지 수행합니다.</p>
+                        </article>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    저희는 이 차이를 Call Assistance와 Call Delegation이라고 정의했습니다.
+
+                    기존의 많은 서비스는 전화 과정을 보조합니다.
+
+                    ARS를 보기 쉽게 만들어 주거나, 상담사가 받을 때까지 대신 기다려 주거나, 통화를 요약해 줍니다.
+
+                    이것도 분명 편리합니다.
+
+                    하지만 결국 중요한 대화가 시작되면 사용자가 다시 전화에 들어가야 합니다.
+
+                    DialAI는 여기서 한 단계 더 갑니다.
+
+                    상담원이 연결돼도 사용자가 다시 들어갈 필요가 없습니다.
+
+                    AI가 계속 대화하고, 사용자가 요청한 업무가 끝날 때까지 수행합니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 10 — CORE FEATURES -->
+            <section class="slide s7" data-slide="10" data-title="Core Features" role="group" aria-roledescription="slide" aria-label="10 of 17">
+                <div class="slide-topline">
+                    <span>10 · Product</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <h2 class="slide-title compact">
+                        <span class="line reveal" data-editable>전화 업무를 끝까지 처리하는 AI Agent</span>
+                    </h2>
+                    <div class="feature-flow">
+                        <article class="feature-step reveal delay-1">
+                            <div class="feature-number">01</div>
+                            <h3 data-editable>요청 구체화</h3>
+                            <p data-editable>모호한 조건을 전화 전에 확인합니다.</p>
+                        </article>
+                        <article class="feature-step reveal delay-2">
+                            <div class="feature-number">02</div>
+                            <h3 data-editable>ARS 처리</h3>
+                            <p data-editable>경로를 탐색하고 식별 정보를 입력합니다.</p>
+                        </article>
+                        <article class="feature-step reveal delay-3">
+                            <div class="feature-number">03</div>
+                            <h3 data-editable>상담사 대화</h3>
+                            <p data-editable>연결 뒤에도 AI가 자연스럽게 대화합니다.</p>
+                        </article>
+                        <article class="feature-step reveal delay-4">
+                            <div class="feature-number">04</div>
+                            <h3 data-editable>사용자 개입</h3>
+                            <p data-editable>판단이 필요할 때만 웹에서 질문합니다.</p>
+                        </article>
+                        <article class="feature-step reveal delay-5">
+                            <div class="feature-number">05</div>
+                            <h3 data-editable>결과 전달</h3>
+                            <p data-editable>통화 요약과 최종 결과를 알려 줍니다.</p>
+                        </article>
+                    </div>
+                    <div class="feature-extra reveal delay-6" data-editable>+ Personalized Voice · Voice Cloning</div>
+                </div>
+                <aside class="speaker-notes">
+                    이를 위해 핵심 기능을 다섯 가지로 구성했습니다.
+
+                    첫 번째는 요청 구체화입니다. 전화하기 전에 AI가 사용자의 의도를 명확하게 만듭니다.
+
+                    두 번째는 ARS 자동 처리입니다. AI가 ARS를 듣고 필요한 메뉴를 선택하고, 필요한 경우 환자 번호나 고객 번호 같은 정보를 입력합니다.
+
+                    세 번째는 가장 핵심인 상담사와의 직접 대화입니다. AI가 실제 사람과 통화하듯 자연스럽게 상담을 이어갑니다.
+
+                    네 번째는 실시간 사용자 개입입니다. AI가 판단할 수 없는 상황에서는 사용자에게 질문을 보내고, 사용자는 버튼이나 채팅으로 답할 수 있습니다.
+
+                    마지막으로 전화가 끝나면 전체 통화 내용, 핵심 요약, 최종 업무 처리 결과를 제공합니다.
+
+                    추가적으로 사용자 말투나 Voice Cloning도 적용할 수 있습니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 11 — DEMO -->
+            <section class="slide s8" data-slide="11" data-title="Demo Scenario" role="group" aria-roledescription="slide" aria-label="11 of 17">
+                <div class="slide-topline">
+                    <span>11 · Demo</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <h2 class="slide-title compact">
+                        <span class="line reveal" data-editable>병원 예약 변경을 AI에게 맡겨 보겠습니다</span>
+                    </h2>
+                    <div class="demo-grid">
+                        <article class="demo-frame reveal delay-1">
+                            <div class="demo-bar"><span>01 · Request</span><span>DialAI</span></div>
+                            <div class="demo-content demo-command">
+                                <div class="prompt" data-editable>병원 예약을 다음 주 금요일 오후로 바꿔 줘.</div>
+                                <div class="clarify" data-editable>오후 중 선호하는 시간대가 있나요?</div>
+                                <div class="send" data-editable>특정 시간 없음</div>
+                            </div>
+                        </article>
+                        <article class="demo-frame reveal delay-2">
+                            <div class="demo-bar"><span>02 · Live call</span><span>00:04:18</span></div>
+                            <div class="demo-content demo-live">
+                                <div class="mini-orb">
+                                    <div class="atmosphere"></div>
+                                    <span class="voice-mark"><i></i><i></i><i></i></span>
+                                </div>
+                                <div class="waveform" aria-hidden="true">
+                                    <span style="--h:12px;--d:-0.1s"></span><span style="--h:28px;--d:-0.4s"></span>
+                                    <span style="--h:42px;--d:-0.8s"></span><span style="--h:20px;--d:-1.0s"></span>
+                                    <span style="--h:54px;--d:-0.3s"></span><span style="--h:32px;--d:-1.2s"></span>
+                                    <span style="--h:46px;--d:-0.7s"></span><span style="--h:20px;--d:-0.2s"></span>
+                                    <span style="--h:38px;--d:-1.1s"></span><span style="--h:14px;--d:-0.5s"></span>
+                                </div>
+                                <div class="live-steps">
+                                    <div class="live-step done" data-editable>ARS 탐색 및 환자 번호 입력</div>
+                                    <div class="live-step done" data-editable>상담사 연결</div>
+                                    <div class="live-step done" data-editable>상담사: 2시 또는 4시 가능</div>
+                                </div>
+                                <div class="live-choice" aria-label="사용자 시간 선택">
+                                    <span data-editable>2시</span>
+                                    <span class="selected" data-editable>4시</span>
+                                </div>
+                            </div>
+                        </article>
+                        <article class="demo-frame reveal delay-3">
+                            <div class="demo-bar"><span>03 · Complete</span><span>Done</span></div>
+                            <div class="demo-content demo-result">
+                                <div class="result-check">✓</div>
+                                <h3 data-editable>예약 변경 완료</h3>
+                                <div class="date-change">
+                                    <div class="date-row"><span>요청</span><strong data-editable>다음 주 금요일 오후</strong></div>
+                                    <div class="date-row"><span>확정</span><strong data-editable>다음 주 금요일 16:00</strong></div>
+                                </div>
+                                <p class="result-summary" data-editable>통화 내용, 요약, 최종 처리 결과가 함께 저장됩니다.</p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    이제 실제 데모를 보시면 훨씬 직관적입니다.
+
+                    사용자가 “병원 예약 다음 주 금요일 오후로 바꿔 줘.”라고 요청합니다.
+
+                    AI는 먼저 오후 중 원하는 시간대가 있는지 확인합니다.
+
+                    조건이 정리되면 AI가 직접 병원에 전화를 겁니다.
+
+                    ARS 안내를 듣고 필요한 메뉴를 선택하고, 환자 번호가 필요하면 미리 제공받은 정보를 입력합니다.
+
+                    상담사가 연결되면 AI가 현재 예약을 다음 주 금요일 오후로 변경하고 싶다고 직접 설명합니다.
+
+                    만약 상담사가 “2시와 4시 중 어떤 시간이 좋으세요?”라고 물어보면, AI가 임의로 선택하지 않고 사용자 화면에 2시와 4시 선택 버튼을 띄웁니다.
+
+                    사용자가 답하면 AI가 그대로 상담사에게 전달합니다. 그리고 마지막에 예약 변경 결과를 사용자에게 알려줍니다.
+
+                    이 전체 과정에서 사용자는 전화기를 붙잡고 기다릴 필요가 없습니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 12 — COMPETITION -->
+            <section class="slide s9" data-slide="12" data-title="Competition" role="group" aria-roledescription="slide" aria-label="12 of 17">
+                <div class="slide-topline">
+                    <span>12 · Competition</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <h2 class="slide-title">
+                        <span class="line reveal" data-editable>Voice AI는 많습니다.</span>
+                        <span class="line reveal delay-1" data-editable>하지만 역할이 다릅니다.</span>
+                    </h2>
+                    <div class="matrix reveal delay-2" role="table" aria-label="Voice AI 경쟁 비교">
+                        <div class="matrix-row matrix-head" role="row">
+                            <div class="matrix-cell" role="columnheader">비교 항목</div>
+                            <div class="matrix-cell" role="columnheader">기업용 Voice Agent</div>
+                            <div class="matrix-cell" role="columnheader">에이닷·익시오</div>
+                            <div class="matrix-cell dialai" role="columnheader">DialAI</div>
+                        </div>
+                        <div class="matrix-row" role="row">
+                            <div class="matrix-cell" role="rowheader" data-editable>개인 사용자를 위한 Agent</div>
+                            <div class="matrix-cell"><span class="matrix-mark muted">×</span></div>
+                            <div class="matrix-cell"><span class="matrix-mark">✓</span></div>
+                            <div class="matrix-cell dialai"><span class="matrix-mark">✓</span></div>
+                        </div>
+                        <div class="matrix-row" role="row">
+                            <div class="matrix-cell" role="rowheader" data-editable>ARS·대기 보조</div>
+                            <div class="matrix-cell"><span class="matrix-mark muted">—</span></div>
+                            <div class="matrix-cell"><span class="matrix-mark">✓</span></div>
+                            <div class="matrix-cell dialai"><span class="matrix-mark">✓</span></div>
+                        </div>
+                        <div class="matrix-row" role="row">
+                            <div class="matrix-cell" role="rowheader" data-editable>외부 기관 상담사와 직접 대화</div>
+                            <div class="matrix-cell"><span class="matrix-mark muted">×</span></div>
+                            <div class="matrix-cell"><span class="matrix-mark muted">×</span></div>
+                            <div class="matrix-cell dialai"><span class="matrix-mark">✓</span></div>
+                        </div>
+                        <div class="matrix-row" role="row">
+                            <div class="matrix-cell" role="rowheader" data-editable>사용자의 업무 완료까지 수행</div>
+                            <div class="matrix-cell"><span class="matrix-mark muted">×</span></div>
+                            <div class="matrix-cell"><span class="matrix-mark muted">×</span></div>
+                            <div class="matrix-cell dialai"><span class="matrix-mark">✓</span></div>
+                        </div>
+                    </div>
+                    <p class="competition-thesis reveal delay-3" data-editable>
+                        개인의 Agent가 기관에 직접 전화해 업무를 끝냅니다.
+                    </p>
+                </div>
+                <aside class="speaker-notes">
+                    물론 Voice AI 시장에는 이미 많은 서비스가 있습니다.
+
+                    기업용 Voice Agent는 AI가 기업 상담원을 대신해 고객을 응대합니다.
+
+                    에이닷이나 익시오 같은 개인용 AI 서비스도 전화 대기나 대신 받기 같은 기능을 제공합니다.
+
+                    하지만 저희가 집중한 위치는 조금 다릅니다.
+
+                    개인 사용자의 Agent가 되어, 제3의 기관에 직접 전화하고, 그 기관의 실제 상담사와 대화해서 사용자의 업무를 완료하는 것입니다.
+
+                    기업용 AI는 기업을 대신하고, 기존 개인용 AI는 주로 사용자의 전화를 보조합니다.
+
+                    DialAI는 개인 사용자를 대신해 업무를 수행합니다.
+
+                    그래서 저희가 이야기하는 핵심 포지션은 Call Assistance가 아니라 Call Delegation입니다.
+
+                    [최종안 확인] 경쟁사 기능은 발표 시점 기준으로 다시 검증해야 합니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 13 — VALUE & VIABILITY -->
+            <section class="slide s10" data-slide="13" data-title="Value &amp; Viability" role="group" aria-roledescription="slide" aria-label="13 of 17">
+                <div class="slide-topline">
+                    <span>13 · Beachhead</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <div>
+                        <p class="eyebrow reveal" data-editable>Value &amp; Viability</p>
+                        <h2 class="slide-title">
+                            <span class="line reveal delay-1" data-editable>반복적이고</span>
+                            <span class="line reveal delay-2" data-editable>전화 의존적인</span>
+                            <span class="line reveal delay-3" data-editable>업무부터 시작합니다</span>
+                        </h2>
+                        <p class="body-copy s10-lead reveal delay-4" data-editable>
+                            제한된 기관과 명확한 업무에서 시작해<br>
+                            성공 범위를 단계적으로 넓힙니다.
+                        </p>
+                    </div>
+                    <div>
+                        <div class="viability-grid reveal-scale delay-2">
+                            <article class="viability-item">
+                                <small>USER</small>
+                                <h3 data-editable>전화 업무가 부담스러운 개인</h3>
+                                <p data-editable>반드시 처리해야 하지만 통화는 피하고 싶은 사용자</p>
+                            </article>
+                            <article class="viability-item">
+                                <small>VALUE</small>
+                                <h3 data-editable>ARS·대기·상담 부담 제거</h3>
+                                <p data-editable>전화에 쓰는 시간과 심리적 부담을 함께 줄임</p>
+                            </article>
+                            <article class="viability-item">
+                                <small>FIRST TASKS</small>
+                                <h3 data-editable>병원 · 통신사 · 공과금 · 공공기관</h3>
+                                <p data-editable>반복적이고 완료 조건이 분명한 업무부터</p>
+                            </article>
+                            <article class="viability-item">
+                                <small>START</small>
+                                <h3 data-editable>제한된 기관과 업무</h3>
+                                <p data-editable>작게 시작하고 성공률을 확인하며 지원 범위 확대</p>
+                            </article>
+                        </div>
+                        <p class="tech-stack reveal delay-3" data-editable>
+                            Realtime Voice AI + 전화 API + STT/TTS + LLM
+                        </p>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    저희가 처음부터 모든 종류의 전화를 처리하려는 것은 아닙니다.
+
+                    초기에는 반복적이고 전화 의존도가 높은 업무부터 시작합니다.
+
+                    예를 들면 병원 진료 일정 변경, 통신사 문의, 공과금 문의, 공공기관 고객센터 업무입니다.
+
+                    사용자가 얻는 가장 직접적인 가치는 전화 대기와 ARS 탐색, 반복 설명에 쓰던 시간을 없애는 것입니다.
+
+                    그리고 현재의 Realtime Voice AI, 전화 API, STT와 TTS, LLM 기술을 결합하면 이 흐름을 End-to-End로 구현할 수 있습니다.
+
+                    처음에는 제한된 기관과 Task에 집중하고, 점차 지원 범위를 넓혀 갈 수 있습니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 14 — INSTITUTION-SPECIFIC DATA -->
+            <section class="slide s11a" data-slide="14" data-title="기관별 업무 데이터" role="group" aria-roledescription="slide" aria-label="14 of 17">
+                <div class="slide-topline">
+                    <span>14 · Data asset</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <div>
+                        <p class="eyebrow reveal" data-editable>Moat</p>
+                        <h2 class="slide-title">
+                            <span class="line reveal delay-1" data-editable>Voice 기술보다</span>
+                            <span class="line reveal delay-2" data-editable>기관별 업무 실행 데이터</span>
+                        </h2>
+                        <p class="body-copy reveal delay-3" data-editable>
+                            모델은 모두가 사용할 수 있습니다.<br>
+                            차이는 기관별 전화를 어떻게 끝내는지에서 쌓입니다.
+                        </p>
+                        <p class="data-asset-name reveal delay-4" data-editable>Institution-specific Task Execution Data</p>
+                    </div>
+                    <div class="moat-data-list reveal-scale delay-2">
+                        <div class="moat-data-row"><small>01</small><strong data-editable>어떤 ARS 경로를 타는가</strong></div>
+                        <div class="moat-data-row"><small>02</small><strong data-editable>어떤 환자·식별 정보가 필요한가</strong></div>
+                        <div class="moat-data-row"><small>03</small><strong data-editable>상담사는 무엇을 반복해서 묻는가</strong></div>
+                        <div class="moat-data-row"><small>04</small><strong data-editable>언제 사용자 확인이 필요한가</strong></div>
+                        <div class="moat-data-row"><small>05</small><strong data-editable>어떤 이유로 실패하고 복구하는가</strong></div>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    저희가 생각하는 장기적인 해자는 Voice 기술 자체가 아닙니다.
+
+                    Voice 모델은 앞으로 계속 좋아지고, 결국 많은 회사가 사용할 수 있게 됩니다.
+
+                    저희가 축적하려는 것은 Institution-specific Task Execution Data, 즉 기관별 전화 업무 실행 데이터입니다.
+
+                    예를 들어 특정 병원의 예약 변경 전화를 반복해서 처리하면, 어떤 ARS 경로를 타야 하는지, 어떤 환자 정보가 필요한지, 상담사가 보통 어떤 질문을 하는지, 어떤 조건에서는 사용자에게 다시 물어봐야 하는지, 그리고 어떤 이유로 실패하는지가 계속 쌓입니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 15 — DATA FLYWHEEL -->
+            <section class="slide s11" data-slide="15" data-title="Data Flywheel" role="group" aria-roledescription="slide" aria-label="15 of 17">
+                <div class="slide-topline">
+                    <span>15 · Data flywheel</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="slide-shell">
+                    <div class="s11-copy">
+                        <h2 class="slide-title">
+                            <span class="line reveal" data-editable>통화가 쌓일수록</span>
+                            <span class="line reveal delay-1" data-editable>AI는 일을 더 잘 끝냅니다</span>
+                        </h2>
+                        <p class="body-copy reveal delay-2" data-editable>
+                            기관별 업무 데이터가 성공률과 처리 속도를 높이고,<br>
+                            더 많은 사용자가 다시 데이터를 만듭니다.
+                        </p>
+                        <p class="moat-thesis reveal delay-3" data-editable>
+                            남들은 AI가 전화를 잘하게 만들고,<br>
+                            우리는 AI가 전화로 일을 끝내는 법을 축적합니다.
+                        </p>
+                    </div>
+                    <div class="flywheel-cycle reveal-scale delay-2" role="group" aria-label="통화량 증가, 기관별 업무 데이터 축적, 성공률과 처리 속도 향상, 사용자 증가가 반복되는 데이터 플라이휠">
+                        <svg class="cycle-links" viewBox="0 0 760 620" aria-hidden="true">
+                            <defs>
+                                <marker id="cycle-arrow-15" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+                                    <path class="cycle-arrow-head" d="M0 0L10 5L0 10Z"></path>
+                                </marker>
+                            </defs>
+                            <path class="cycle-link" d="M280 82H466"></path>
+                            <path class="cycle-link" d="M620 140V466"></path>
+                            <path class="cycle-link" d="M480 538H294"></path>
+                            <path class="cycle-link" d="M140 480V154"></path>
+                        </svg>
+                        <ol class="cycle-steps">
+                            <li class="cycle-step cycle-step-1">
+                                <span class="cycle-no">01</span>
+                                <strong data-editable>통화량 증가</strong>
+                            </li>
+                            <li class="cycle-step cycle-step-2">
+                                <span class="cycle-no">02</span>
+                                <strong data-editable>기관별 업무 데이터 축적</strong>
+                            </li>
+                            <li class="cycle-step cycle-step-3">
+                                <span class="cycle-no">03</span>
+                                <strong data-editable>성공률·처리 속도 향상</strong>
+                            </li>
+                            <li class="cycle-step cycle-step-4">
+                                <span class="cycle-no">04</span>
+                                <strong data-editable>사용자 증가</strong>
+                            </li>
+                        </ol>
+                        <div class="cycle-core">
+                            <small>COMPOUNDING ASSET</small>
+                            <strong data-editable>기관별 업무<br>실행 데이터</strong>
+                        </div>
+                    </div>
+                </div>
+                <aside class="speaker-notes">
+                    결국 통화량이 늘어날수록 기관별 업무 데이터가 쌓이고, AI의 성공률과 속도가 높아지고, 더 많은 사용자가 들어오면서 다시 더 많은 데이터가 쌓이는 구조를 만들 수 있습니다.
+
+                    저희는 이를 Data Flywheel이라고 보고 있습니다.
+
+                    한 문장으로 표현하면, “남들은 AI가 전화를 잘하게 만들고, 우리는 AI가 전화로 일을 끝내는 법을 축적합니다.”
+                </aside>
+            </section>
+
+            <!-- SLIDE 16 — VISION -->
+            <section class="slide s12" data-slide="16" data-title="Vision" role="group" aria-roledescription="slide" aria-label="16 of 17">
+                <div class="slide-topline">
+                    <span>16 · Vision</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="atmosphere soft" aria-hidden="true"></div>
+                <div class="slide-shell">
+                    <h2 class="slide-title">
+                        <span class="line reveal" data-editable>모든 AI에게</span>
+                        <span class="line reveal delay-1" data-editable>‘전화할 수 있는 손’을 붙입니다</span>
+                    </h2>
+                    <div class="vision-track">
+                        <article class="vision-step reveal delay-1">
+                            <div class="vision-label">NOW</div>
+                            <h3 data-editable>Web App</h3>
+                            <p data-editable>사용자가 DialAI에 직접 전화 업무를 요청합니다.</p>
+                        </article>
+                        <article class="vision-step reveal delay-2">
+                            <div class="vision-label">NEXT</div>
+                            <h3 data-editable>MCP / Agent Tool</h3>
+                            <p data-editable>다른 AI가 DialAI를 실행 도구로 호출합니다.</p>
+                        </article>
+                        <article class="vision-step reveal delay-3">
+                            <div class="vision-label">THEN</div>
+                            <h3 data-editable>Any AI → Call</h3>
+                            <p data-editable>ChatGPT와 Agent가 실제 전화 업무까지 완료합니다.</p>
+                        </article>
+                    </div>
+                    <p class="vision-close reveal delay-4" data-editable>
+                        정보를 알려주는 AI에서, 대신 일을 처리하는 AI로.
+                    </p>
+                </div>
+                <aside class="speaker-notes">
+                    그리고 DialAI를 단순히 하나의 웹 서비스로 끝내고 싶지는 않습니다.
+
+                    처음에는 사용자가 DialAI 웹앱에서 직접 전화 업무를 요청합니다.
+
+                    하지만 이후에는 MCP나 Agent Tool 형태로 확장할 수 있습니다.
+
+                    그러면 사용자가 ChatGPT나 다른 AI에게 “다음 주 병원 예약 변경해 줘.”라고 이야기하는 순간, 그 Agent가 DialAI를 호출하고, DialAI가 실제 세상에 전화를 걸어 업무를 처리합니다.
+
+                    즉 저희가 만들고 싶은 것은 모든 AI에게 현실 세계에 전화를 걸 수 있는 ‘손’을 붙이는 것입니다.
+                </aside>
+            </section>
+
+            <!-- SLIDE 17 — CLOSING -->
+            <section class="slide s13 dark" data-slide="17" data-title="Closing" role="group" aria-roledescription="slide" aria-label="17 of 17">
+                <div class="slide-topline">
+                    <span>17 · Closing</span>
+                    <span class="brand">DialAI</span>
+                </div>
+                <div class="atmosphere" aria-hidden="true"></div>
+                <div class="slide-shell">
+                    <p class="closing-kicker reveal" data-editable>Call delegation for everyone</p>
+                    <h2 class="closing-copy">
+                        <span class="line reveal delay-1" data-editable>전화해야 할 일을 말하세요.</span>
+                        <span class="line reveal delay-2" data-editable>AI가 대신 전화해서 끝냅니다.</span>
+                    </h2>
+                    <div class="dialai-lockup closing-lockup reveal delay-3">
+                        <span class="voice-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+                        <span class="dialai-wordmark" data-editable>DialAI</span>
+                    </div>
+                    <p class="closing-tagline reveal delay-3" data-editable>Call less. Get it done.</p>
+                </div>
+                <aside class="speaker-notes">
+                    지금까지 AI는 우리에게 정보를 알려 주거나, 문서를 만들거나, 질문에 답해 줬습니다.
+
+                    저희는 그 다음 단계가 AI가 사용자를 대신해 실제 세상의 귀찮은 일을 처리하는 것이라고 생각합니다.
+
+                    전화해야 할 일을 말하세요.
+
+                    AI가 대신 전화해서 끝냅니다.
+
+                    DialAI. Call less. Get it done.
+
+                    감사합니다.
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <!-- ===========================================
+         PRESENTATION CHROME
+         =========================================== -->
+    <div class="deck-progress" aria-hidden="true">
+        <div class="deck-progress-bar" id="progressBar"></div>
+    </div>
+
+    <nav class="deck-controls" aria-label="슬라이드 이동">
+        <button type="button" id="prevButton" aria-label="이전 슬라이드">←</button>
+        <span class="deck-count" id="deckCount">01 / 17</span>
+        <button type="button" id="nextButton" aria-label="다음 슬라이드">→</button>
+        <button type="button" id="notesButton" aria-label="발표자 노트 열기" title="발표자 노트 (N)">N</button>
+    </nav>
+
+    <div class="deck-hint" id="deckHint">← → / Space · N notes · E edit</div>
+
+    <!-- Speaker notes are populated from the active slide. -->
+    <aside class="notes-panel" id="notesPanel" aria-hidden="true">
+        <button type="button" class="notes-close" id="notesClose" aria-label="발표자 노트 닫기">×</button>
+        <div class="notes-title" id="notesTitle"></div>
+        <div class="notes-body" id="notesBody"></div>
+    </aside>
+
+    <!-- Inline edit controls: top-left hover with the required 400 ms grace period. -->
+    <div class="edit-hotzone" id="editHotzone" aria-hidden="true"></div>
+    <button type="button" class="edit-toggle" id="editToggle" title="편집 모드 (E)" aria-label="편집 모드 전환">✎</button>
+    <div class="edit-panel" id="editPanel">
+        <span class="edit-status" id="editStatus">자동 저장</span>
+        <button type="button" id="exportButton">HTML 저장</button>
+        <button type="button" id="exitEditButton">편집 종료</button>
+    </div>
+
+    <script>
+        /* ===========================================
+           SPEAKER NOTES CONTROLLER
+           =========================================== */
+        class SpeakerNotes {
+            constructor() {
+                this.panel = document.getElementById('notesPanel');
+                this.title = document.getElementById('notesTitle');
+                this.body = document.getElementById('notesBody');
+                this.isOpen = false;
+
+                document.getElementById('notesButton').addEventListener('click', () => this.toggle());
+                document.getElementById('notesClose').addEventListener('click', () => this.close());
+            }
+
+            update(slide) {
+                const notes = slide.querySelector('.speaker-notes');
+                this.title.textContent = String(slide.dataset.slide).padStart(2, '0') + ' · ' + slide.dataset.title;
+                this.body.textContent = notes ? notes.textContent.trim() : '발표자 노트가 없습니다.';
+            }
+
+            toggle() {
+                this.isOpen ? this.close() : this.open();
+            }
+
+            open() {
+                this.isOpen = true;
+                this.panel.classList.add('open');
+                this.panel.setAttribute('aria-hidden', 'false');
+            }
+
+            close() {
+                this.isOpen = false;
+                this.panel.classList.remove('open');
+                this.panel.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        /* ===========================================
+           INLINE EDITOR
+           Auto-saves text changes to localStorage.
+           =========================================== */
+        class InlineEditor {
+            constructor() {
+                this.isActive = false;
+                this.storageKey = 'dialai-pitch-v2-edits';
+                this.elements = Array.from(document.querySelectorAll('[data-editable]'));
+                this.status = document.getElementById('editStatus');
+                this.toggleButton = document.getElementById('editToggle');
+                this.saved = this.readSaved();
+
+                this.assignKeys();
+                this.restore();
+                this.setupControls();
+                this.setupHotzone();
+                this.setupKeyboard();
+            }
+
+            readSaved() {
+                try {
+                    return JSON.parse(localStorage.getItem(this.storageKey) || '{}');
+                } catch (error) {
+                    return {};
+                }
+            }
+
+            assignKeys() {
+                const slideCounts = {};
+                this.elements.forEach((element) => {
+                    const slide = element.closest('.slide');
+                    const slideId = slide ? slide.dataset.slide : 'global';
+                    slideCounts[slideId] = (slideCounts[slideId] || 0) + 1;
+                    element.dataset.editKey = slideId + '-' + slideCounts[slideId];
+                });
+            }
+
+            restore() {
+                this.elements.forEach((element) => {
+                    const value = this.saved[element.dataset.editKey];
+                    if (typeof value === 'string') {
+                        element.innerHTML = value;
+                    }
+                });
+            }
+
+            setupControls() {
+                this.toggleButton.addEventListener('click', () => this.toggleEditMode());
+                document.getElementById('exitEditButton').addEventListener('click', () => this.toggleEditMode(false));
+                document.getElementById('exportButton').addEventListener('click', () => this.exportHtml());
+
+                this.elements.forEach((element) => {
+                    element.addEventListener('input', () => this.saveElement(element));
+                });
+            }
+
+            setupHotzone() {
+                const hotzone = document.getElementById('editHotzone');
+                let hideTimeout = null;
+
+                hotzone.addEventListener('mouseenter', () => {
+                    clearTimeout(hideTimeout);
+                    this.toggleButton.classList.add('show');
+                });
+
+                hotzone.addEventListener('mouseleave', () => {
+                    hideTimeout = setTimeout(() => {
+                        if (!this.isActive) this.toggleButton.classList.remove('show');
+                    }, 400);
+                });
+
+                this.toggleButton.addEventListener('mouseenter', () => {
+                    clearTimeout(hideTimeout);
+                });
+
+                this.toggleButton.addEventListener('mouseleave', () => {
+                    hideTimeout = setTimeout(() => {
+                        if (!this.isActive) this.toggleButton.classList.remove('show');
+                    }, 400);
+                });
+
+                hotzone.addEventListener('click', () => this.toggleEditMode());
+            }
+
+            setupKeyboard() {
+                document.addEventListener('keydown', (event) => {
+                    const isEditingText = event.target && event.target.getAttribute('contenteditable') === 'true';
+                    if ((event.key === 'e' || event.key === 'E') && !isEditingText) {
+                        event.preventDefault();
+                        this.toggleEditMode();
+                    }
+                });
+            }
+
+            toggleEditMode(force) {
+                this.isActive = typeof force === 'boolean' ? force : !this.isActive;
+                document.body.classList.toggle('editing', this.isActive);
+                this.toggleButton.classList.toggle('active', this.isActive);
+                this.toggleButton.classList.toggle('show', this.isActive);
+
+                this.elements.forEach((element) => {
+                    if (this.isActive) {
+                        element.setAttribute('contenteditable', 'true');
+                        element.setAttribute('spellcheck', 'false');
+                    } else {
+                        element.removeAttribute('contenteditable');
+                        element.removeAttribute('spellcheck');
+                    }
+                });
+
+                this.status.textContent = this.isActive ? '자동 저장 중' : '자동 저장';
+            }
+
+            saveElement(element) {
+                this.saved[element.dataset.editKey] = element.innerHTML;
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.saved));
+                    this.status.textContent = '저장됨';
+                    window.clearTimeout(this.statusTimer);
+                    this.statusTimer = window.setTimeout(() => {
+                        this.status.textContent = '자동 저장 중';
+                    }, 900);
+                } catch (error) {
+                    this.status.textContent = '저장 실패';
+                }
+            }
+
+            exportHtml() {
+                const clone = document.documentElement.cloneNode(true);
+                clone.querySelector('body').classList.remove('editing');
+                clone.querySelectorAll('[contenteditable]').forEach((element) => {
+                    element.removeAttribute('contenteditable');
+                    element.removeAttribute('spellcheck');
+                });
+                clone.querySelectorAll('.edit-toggle').forEach((element) => {
+                    element.classList.remove('active', 'show');
+                });
+
+                const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = url;
+                anchor.download = 'dialai-pitch-v2-edited.html';
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        /* ===========================================
+           SLIDE PRESENTATION CONTROLLER
+           Keyboard, wheel, touch, click, and fixed scaling.
+           =========================================== */
+        class SlidePresentation {
+            constructor(editor, notes) {
+                this.editor = editor;
+                this.notes = notes;
+                this.slides = Array.from(document.querySelectorAll('.slide'));
+                this.stage = document.getElementById('deckStage');
+                this.viewport = document.getElementById('deckViewport');
+                this.progress = document.getElementById('progressBar');
+                this.counter = document.getElementById('deckCount');
+                this.currentSlide = this.initialSlideFromHash();
+                this.wheelLocked = false;
+                this.touchStartX = 0;
+                this.touchStartY = 0;
+
+                this.setupStageScale();
+                this.setupKeyboardNav();
+                this.setupWheelNav();
+                this.setupTouchNav();
+                this.setupClickNav();
+                this.setupControls();
+                this.showSlide(this.currentSlide, false);
+            }
+
+            initialSlideFromHash() {
+                const parsed = Number(window.location.hash.replace('#', ''));
+                if (Number.isInteger(parsed) && parsed >= 1 && parsed <= this.slides.length) {
+                    return parsed - 1;
+                }
+                return 0;
+            }
+
+            setupStageScale() {
+                const scaleStage = () => {
+                    const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                    const x = (window.innerWidth - 1920 * factor) / 2;
+                    const y = (window.innerHeight - 1080 * factor) / 2;
+                    this.stage.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + factor + ')';
+                };
+
+                scaleStage();
+                window.addEventListener('resize', scaleStage, { passive: true });
+            }
+
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (event) => {
+                    const targetIsEditable = event.target && (
+                        event.target.getAttribute('contenteditable') === 'true' ||
+                        /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)
+                    );
+
+                    if (targetIsEditable) return;
+
+                    if (event.key === 'Escape') {
+                        this.notes.close();
+                        if (this.editor.isActive) this.editor.toggleEditMode(false);
+                        return;
+                    }
+
+                    if (event.key === 'n' || event.key === 'N') {
+                        event.preventDefault();
+                        this.notes.toggle();
+                        return;
+                    }
+
+                    if (this.editor.isActive || this.notes.isOpen) return;
+
+                    if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(event.key)) {
+                        event.preventDefault();
+                        this.next();
+                    } else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(event.key)) {
+                        event.preventDefault();
+                        this.previous();
+                    } else if (event.key === 'Home') {
+                        event.preventDefault();
+                        this.showSlide(0);
+                    } else if (event.key === 'End') {
+                        event.preventDefault();
+                        this.showSlide(this.slides.length - 1);
+                    }
+                });
+            }
+
+            setupWheelNav() {
+                window.addEventListener('wheel', (event) => {
+                    if (this.editor.isActive || this.notes.isOpen || this.wheelLocked) return;
+                    if (Math.abs(event.deltaY) < 20 && Math.abs(event.deltaX) < 20) return;
+
+                    this.wheelLocked = true;
+                    if (event.deltaY > 0 || event.deltaX > 0) {
+                        this.next();
+                    } else {
+                        this.previous();
+                    }
+
+                    window.setTimeout(() => {
+                        this.wheelLocked = false;
+                    }, 620);
+                }, { passive: true });
+            }
+
+            setupTouchNav() {
+                this.viewport.addEventListener('touchstart', (event) => {
+                    const touch = event.changedTouches[0];
+                    this.touchStartX = touch.clientX;
+                    this.touchStartY = touch.clientY;
+                }, { passive: true });
+
+                this.viewport.addEventListener('touchend', (event) => {
+                    if (this.editor.isActive || this.notes.isOpen) return;
+                    const touch = event.changedTouches[0];
+                    const dx = touch.clientX - this.touchStartX;
+                    const dy = touch.clientY - this.touchStartY;
+
+                    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
+                        dx < 0 ? this.next() : this.previous();
+                    }
+                }, { passive: true });
+            }
+
+            setupClickNav() {
+                this.viewport.addEventListener('click', (event) => {
+                    if (this.editor.isActive || this.notes.isOpen) return;
+                    if (event.target.closest('button, a, [contenteditable="true"]')) return;
+
+                    const rect = this.stage.getBoundingClientRect();
+                    const relativeX = (event.clientX - rect.left) / rect.width;
+                    if (relativeX > 0.83) this.next();
+                    if (relativeX < 0.17) this.previous();
+                });
+            }
+
+            setupControls() {
+                document.getElementById('prevButton').addEventListener('click', () => this.previous());
+                document.getElementById('nextButton').addEventListener('click', () => this.next());
+            }
+
+            showSlide(index, updateHash = true) {
+                this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+
+                this.slides.forEach((slide, slideIndex) => {
+                    const isCurrent = slideIndex === this.currentSlide;
+                    slide.classList.toggle('active', isCurrent);
+                    slide.classList.toggle('visible', isCurrent);
+                    slide.setAttribute('aria-hidden', String(!isCurrent));
+                });
+
+                const current = this.slides[this.currentSlide];
+                this.notes.update(current);
+                this.counter.textContent =
+                    String(this.currentSlide + 1).padStart(2, '0') +
+                    ' / ' +
+                    String(this.slides.length).padStart(2, '0');
+                this.progress.style.width = ((this.currentSlide + 1) / this.slides.length * 100) + '%';
+
+                if (updateHash) {
+                    history.replaceState(null, '', '#' + (this.currentSlide + 1));
+                }
+            }
+
+            next() {
+                this.showSlide(this.currentSlide + 1);
+            }
+
+            previous() {
+                this.showSlide(this.currentSlide - 1);
+            }
+        }
+
+        /* ===========================================
+           INITIALIZATION
+           =========================================== */
+        const speakerNotes = new SpeakerNotes();
+        const inlineEditor = new InlineEditor();
+        const presentation = new SlidePresentation(inlineEditor, speakerNotes);
+
+        window.setTimeout(() => {
+            document.getElementById('deckHint').classList.add('fade');
+        }, 6500);
+    </script>
+</body>
+</html>

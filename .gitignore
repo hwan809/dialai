@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+/.worktrees/
 /.pnp
 .pnp.*
 .yarn/*

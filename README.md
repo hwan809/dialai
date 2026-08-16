@@ -1,77 +1,449 @@
-# DialAI
+# **DialAI**
 
-DialAI queues a general-purpose Korean phone call from an MCP client, then an always-on worker places the call and saves the transcript and verified outcome. It supports information inquiries, reservations, changes, and cancellations; it does not keep the MCP request open while telephony runs.
+> 전화를 도와주는 AI가 아니라, 전화로 해야 하는 일을 대신 끝내는 AI Agent
+> 
 
-## Local setup and Supabase
+## **제출 자료**
 
-```bash
+최종 산출물은 MVP 구현과 배포가 끝난 뒤 아래 경로에 정리합니다.
+
+| **자료** | **최종 위치** | **현재 상태** |
+| --- | --- | --- |
+| 발표자료 | `docs/presentation/23팀_DialAI_발표자료.pptx` | 제작 예정 |
+| 데모 영상 | `docs/demo/23팀_DialAI_데모.mp4` | MVP 완성 후 제작 |
+| MVP | 이 저장소 및 아래 라이브 배포 URL | 구현 중 |
+| Codex Build Log | `docs/build-log/23_성함_번호_log.md` | 코드 프리즈 후 생성 |
+| 제출물 제작·검증 절차 | `[docs/submission/README.md](https://github.com/hwan809/dialai/blob/main/docs/submission/README.md)` | 문서화 완료 |
+
+Build Log의 `번호`는 팀원 번호가 아니라 각 팀원의 Codex 작업 세션 순번입니다. 예를 들어 김환의 유효한 작업 세션이 14개라면 `23_김환_01_log.md`부터 `23_김환_14_log.md`까지 생성합니다.
+
+## **문제**
+
+### 전화는 하기 싫지만, 여전히 해야 합니다.
+
+고객센터 전화는 여전히 중요한 업무 처리 수단이지만, **전화 자체에 대한 부담과 상담사 연결까지의 대기 시간**이 동시에 사용자 경험을 악화시키고 있습니다.
+
+### 1. 많은 사용자가 전화 자체를 부담스러워합니다
+
+2024년 Z세대 765명을 대상으로 한 조사에서 **40.8%가 전화 통화 시 긴장·불안·두려움을 경험한다고 응답**했습니다.
+
+※ 40.8%는 임상적 전화공포증 유병률이 아닌 설문 응답 비율입니다.
+
+※ 출처: 알바천국, 「Z세대 5명 중 2명 ‘나는 콜 포비아’」, 2024.
+
+### 2. 그런데 실제 업무에서는 여전히 전화가 필요합니다
+
+국내 고객센터 이용자 1,000명을 대상으로 한 조사에서는 **70.4%가 전화·ARS를 선호하는 고객센터 이용 방식으로 선택**했습니다.
+
+즉,
+
+> **사용자는 전화를 부담스러워하면서도 실제 업무를 처리하기 위해 여전히 전화를 해야 합니다.**
+> 
+
+### 3. 전화 시간의 상당 부분은 실제 상담조차 아닙니다
+
+상담사와 통화한 경험이 있는 637명 중 **54.8%가 상담사 연결까지 3분 이상 대기한 경험**이 있었으며, **5.5%는 10분 이상 대기**했다고 응답했습니다.
+
+전화·ARS 서비스에 불만족한 이용자의 **75.4%는 ‘상담사 연결의 어려움’을 주요 불만 원인으로 지적**했습니다.
+
+※ 출처: 한국소비자원, 「소비자상담기구 운영 실태조사」, 2021.
+
+### 핵심 문제
+
+**전화는 하기 싫지만, 여전히 해야 합니다.**
+
+그리고 전화 업무의 상당 부분에서 사용자는 실제 업무를 처리하는 것이 아니라,
+
+**ARS 탐색 → 본인 확인 → 상담사 연결 대기 → 반복적인 정보 전달**
+
+과정에 자신의 시간을 사용하고 있습니다.
+
+우리는 사용자가 직접 전화기를 붙잡고 기다리는 대신, **AI가 이 전체 과정을 맡을 수 있다고 생각했습니다.**
+
+## **솔루션**
+
+### AI에게 전화 업무 자체를 위임합니다.
+
+사용자는 원하는 업무만 자연어로 전달합니다.
+
+> **“병원에 전화해서 다음 주 금요일 오후로 예약 변경해줘.”**
+> 
+
+DialAI는 이후 필요한 정보를 확인하고 실제 전화를 발신한 뒤, 업무가 완료될 때까지 전화 과정을 수행합니다.
+
+### How it Works
+
+**사용자 요청**
+
+↓
+
+**요청 구체화**
+
+↓
+
+**AI 전화 발신**
+
+↓
+
+**ARS 탐색 및 상담사 연결 대기**
+
+↓
+
+**AI ↔ 상담사 직접 대화**
+
+↓
+
+**필요 시 사용자에게 추가 확인**
+
+↓
+
+**업무 완료**
+
+↓
+
+**통화 내용·요약·처리 결과 전달**
+
+기존 서비스가 사용자의 전화 과정을 보조하는 **Call Assistance**에 가깝다면, DialAI는 전화 업무 자체를 맡기는 **Call Delegation**을 지향합니다.
+
+> **AI가 전화를 도와주는 것이 아니라,**
+> 
+> 
+> ### 전화로 해야 하는 일을 대신 끝냅니다.
+> 
+
+## Core Features
+
+### ① 전화 전 요청 구체화
+
+사용자의 요청이 모호하거나 업무 수행에 필요한 정보가 부족한 경우, AI가 먼저 질문합니다.
+
+예를 들어 병원 예약 변경이라면
+
+- 변경하려는 예약
+- 원하는 날짜
+- 가능한 시간대
+- 환자 식별정보
+
+등을 통화 전에 확인하여 **전화 목적과 조건을 명확하게 정의**합니다.
+
+---
+
+### ② ARS 자동 처리
+
+AI가 ARS 안내를 이해하고 필요한 메뉴를 탐색합니다.
+
+필요한 경우 사용자가 사전에 제공한
+
+- 환자번호
+- 고객번호
+- 예약번호
+- 기타 기관별 식별정보
+
+등을 사용하여 상담사 연결 단계까지 진행합니다.
+
+---
+
+### ③ 상담사와 직접 대화
+
+상담원이 연결된 이후에도 사용자에게 전화를 넘기지 않습니다.
+
+**AI가 사용자를 대신해 상담사와 직접 대화하며 실제 업무를 처리합니다.**
+
+단순히 상담원 연결을 기다려주는 것이 아니라, 사용자가 최초에 요청한 목적을 달성하는 것이 DialAI의 핵심입니다.
+
+---
+
+### ④ 실시간 사용자 개입
+
+AI가 임의로 판단하기 어려운 상황에서는 사용자가 직접 개입할 수 있습니다.
+
+사용자는 웹앱에서 통화 진행 상황을 확인하고, 추가 판단이 필요한 경우
+
+- 선택 버튼
+- 채팅 입력
+
+등을 통해 AI에게 즉시 의사를 전달할 수 있습니다.
+
+예를 들어,
+
+> “금요일 오후는 모두 마감이고 목요일 오후 3시만 가능하다고 합니다.”
+> 
+
+라는 상황이 발생하면 AI가 사용자에게 확인한 뒤 통화를 이어갑니다.
+
+---
+
+### ⑤ 통화 결과 전달
+
+통화 종료 후 사용자는 전화 내용을 다시 들을 필요가 없습니다.
+
+DialAI가
+
+- 전체 통화 내용
+- 핵심 통화 요약
+- 최종 업무 처리 결과
+
+를 정리하여 제공합니다.
+
+---
+
+### ⑥ Natural Voice
+
+AI가 실제 상담사와 자연스럽게 대화할 수 있도록 실시간 Voice AI를 활용합니다.
+
+향후에는 개인화 기능으로
+
+- 사용자 말투 학습
+- Voice Cloning
+- 개인별 통화 스타일 설정
+
+등을 적용할 수 있습니다.
+
+---
+
+## Why DialAI?
+
+전화 관련 AI 서비스는 이미 존재합니다.
+
+하지만 대부분은 두 가지 방향으로 발전하고 있습니다.
+
+1. **기업을 대신해 고객에게 전화하는 Voice Agent**
+2. **사용자의 전화 과정을 보조하는 Call Assistant**
+
+DialAI는 그 사이에서 다른 방향을 선택했습니다.
+
+### 개인 사용자의 업무를 대신 수행하는 Agent
+
+| 기능 | 기업용 Voice Agent | 개인용 Call Assistant | **DialAI** |
+| --- | --- | --- | --- |
+| 기업을 대신해 고객 응대 | ✓ | ✕ | ✕ |
+| 개인 사용자를 위한 Agent | ✕ | ✓ | **✓** |
+| ARS·대기 과정 보조 | - | ✓ | **✓** |
+| 제3기관 상담사와 AI 직접 대화 | ✕ | ✕ | **✓** |
+| 사용자의 업무 완료까지 수행 | ✕ | ✕ | **✓** |
+| 통화 중 사용자 개입 | ✕ | △ | **✓** |
+
+> **Call Assistance → Call Delegation**
+> 
+
+DialAI의 목적은 **전화를 더 편하게 하는 것**이 아니라, 사용자가 전화해야 하는 상황 자체를 줄이는 것입니다.
+
+---
+
+## **데모**
+
+- 라이브: [배포 URL]
+- 영상: [데모 영상 링크]
+
+## **기술 스택**
+
+- **Frontend**: Next.js, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes
+- **AI**: OpenAI GPT-4o (via Codex API credits)
+- **Database**: Supabase
+- **Deployment**: Vercel
+
+## **실행 방법**
+
+```
 npm install
 cp .env.example .env.local
-```
-
-Create a Supabase project, set `NEXT_PUBLIC_SUPABASE_URL`, and apply the SQL migration in `supabase/migrations/` to create the tenant, API-key, phone-call-job, and call-attempt tables plus their queue RPCs. For server and worker access, prefer `SUPABASE_SECRET_KEY`; `SUPABASE_SERVICE_ROLE_KEY` is a legacy fallback only. Neither key belongs in a `NEXT_PUBLIC_` variable.
-
-Create a tenant and its MCP bearer token after configuring the Supabase environment:
-
-```bash
-npm run tenant:create -- --name "Example tenant"
-```
-
-The raw `call_...` token is shown once. Store it in a secret manager; the database stores only its SHA-256 hash.
-
-## Two deployment processes
-
-Deploy these as separate processes:
-
-```bash
-# Next.js MCP server (Vercel or another Node host)
+# .env.local에 API 키 입력
 npm run dev
-
-# Always-on Node worker; never run this in a Vercel Route Handler
-npm run worker
 ```
 
-The worker atomically claims one job at a time, heartbeats active work every 30 seconds, recovers locks stale for five minutes, and retries only one `no-answer`, `busy`, or transient provider failure. Add worker processes only after the ClawOps account supports the corresponding concurrent phone lines.
+## **팀**
 
-## Codex MCP registration
+| **이름** | **역할** | **기여** |
+| --- | --- | --- |
+|  | Build |  |
+|  | Build |  |
+|  | Insight |  |
+|  | Insight |  |
 
-Set the bearer token in your shell, not in the repository or Codex configuration file:
+## **Codex Build Log**
 
-```bash
-export DIALAI_MCP_TOKEN='call_...'
-codex mcp add dialai --url https://example.com/mcp --bearer-token-env-var DIALAI_MCP_TOKEN
-codex mcp list
-```
+[Codex에 위임한 작업과 결과를 기록]
 
-For local development, replace the URL with `http://localhost:3000/mcp`. DialAI exposes these generic tools:
+## **Value & Viability**
 
-- `create_phone_call` — queue a call with `destinationPhone`, a free-form `objective`, optional `context`, and optional `successCriteria`.
-- `get_phone_call` — retrieve a queued call, transcript, and outcome.
-- `list_phone_calls` — list recent calls for the authenticated tenant.
-- `cancel_phone_call` — cancel only queued or retry-scheduled calls.
+## 대상 사용자
 
-`create_phone_call` returns a `callId` and queued status immediately. Poll `get_phone_call` for completion rather than waiting for a call in the MCP session.
+**전화로만 처리 가능한 업무가 있지만 직접 전화하고 기다리는 데 불편을 느끼는 개인 사용자**
 
-## Environment and security
+특히 다음과 같은 상황을 주요 대상으로 합니다.
 
-`CLAWOPS_API_KEY`, `CLAWOPS_ACCOUNT_ID`, `CLAWOPS_FROM_NUMBER`, and `OPENAI_API_KEY` are server/worker secrets. The worker always uses `CLAWOPS_FROM_NUMBER`; MCP clients cannot select caller ID. Logs redact destinations to their last four digits and never print secrets, full context, or full phone numbers.
+- 업무나 수업 중 고객센터에 전화하기 어려운 사용자
+- 상담사 연결을 오래 기다리고 싶지 않은 사용자
+- 전화 통화 자체에 부담을 느끼는 사용자
+- 반복적인 예약·변경·문의 전화를 자주 처리하는 사용자
 
-The ClawOps agent uses Korean OpenAI Realtime, does not record audio, identifies itself as an AI assistant in its first turn, and records only text transcript plus confirmed facts. Do not commit `.env.local`, bearer tokens, Supabase secret keys, ClawOps credentials, or OpenAI credentials.
+---
 
-## Safe live smoke call
+## 기대 가치
 
-Automated tests never place a telephone call. The smoke command refuses to run unless both values are explicitly supplied:
+DialAI가 제공하는 핵심 가치는 **전화 업무의 완전 위임(Call Delegation)**입니다.
 
-```bash
-RUN_LIVE_CALL=true LIVE_CALL_TO=01000000000 npm run smoke:call
-```
+사용자는 더 이상
 
-Use only a number whose owner has approved the test. The command normalizes that explicit number, performs one short connection check, redacts its final output, and disconnects after the call.
+- 언제 고객센터가 운영하는지 확인하고
+- 직접 전화를 걸고
+- ARS 메뉴를 찾아가고
+- 상담원이 연결될 때까지 기다리고
+- 반복적으로 정보를 설명하는
 
-## Verification
+과정을 직접 수행할 필요가 없습니다.
 
-```bash
-npm test
-npm run lint
-npm run build
-```
+사용자는 단지
+
+> **“이 전화 업무 처리해줘.”**
+> 
+
+라고 요청하면 됩니다.
+
+DialAI는 사용자의 **시간과 인지 비용을 절감하고**, 사용자가 전화 업무를 자신의 일정과 분리할 수 있도록 합니다.
+
+---
+
+## 운영 가능성
+
+현재의
+
+**전화 API + 실시간 STT/TTS + Voice AI + LLM**
+
+기술을 결합하면 사용자 요청부터 실제 통화와 결과 전달까지 End-to-End Agent를 구현할 수 있습니다.
+
+DialAI는 초기부터 모든 전화를 완전히 자율적으로 처리하려 하지 않습니다.
+
+대신,
+
+### 1. 제한된 Task부터 시작합니다
+
+병원 예약 변경처럼 **목적과 처리 과정이 비교적 명확하고 반복적인 업무**부터 지원합니다.
+
+### 2. Human-in-the-loop 구조를 사용합니다
+
+AI가 판단하기 어려운 상황에서는 사용자에게 실시간으로 질문합니다.
+
+따라서 완전 자율화가 어려운 상황에서도 실제 업무 수행이 가능합니다.
+
+### 3. 기관별 업무 프로세스를 학습합니다
+
+같은 기관에 대한 전화가 반복될수록 해당 기관의 ARS 구조와 상담 프로세스를 더 잘 이해할 수 있습니다.
+
+이를 통해 지원 가능한 업무 범위를 점진적으로 확대할 수 있습니다.
+
+---
+
+## Long-term Moat
+
+### Voice 기술 자체보다 중요한 것은 업무 실행 데이터입니다.
+
+장기적인 DialAI의 핵심 자산은 단순한 Voice 모델이 아니라,
+
+> **Institution-specific Task Execution Data**
+> 
+
+입니다.
+
+실제 전화 업무가 쌓일수록 기관별로 다음과 같은 데이터가 축적됩니다.
+
+- 어떤 ARS 경로를 거쳐야 하는가
+- 어떤 식별정보가 필요한가
+- 상담사가 어떤 질문을 하는가
+- 업무 완료를 위해 어떤 정보를 미리 준비해야 하는가
+- 어떤 상황에서 사용자 확인이 필요한가
+- 어떤 표현이나 대화 전략의 성공률이 높은가
+- 어떤 상황에서 업무 처리가 실패하는가
+
+예를 들어 특정 병원의 예약 변경 전화가 반복된다면 DialAI는 점차
+
+**예약 변경 → 진료과 선택 → 환자번호 입력 → 상담사 연결 → 기존 예약 확인 → 변경 가능 시간 확인**
+
+과 같은 기관별 업무 흐름을 이해하게 됩니다.
+
+---
+
+## Data Flywheel
+
+**통화량 증가**
+
+↓
+
+**기관별 Task / Process 데이터 축적**
+
+↓
+
+**업무 처리 성공률 및 처리 속도 향상**
+
+↓
+
+**지원 가능한 기관·Task 확대**
+
+↓
+
+**사용자 증가**
+
+↓
+
+**추가 통화 데이터 축적**
+
+이러한 구조를 통해 DialAI는 단순한 범용 Voice Agent가 아니라,
+
+> **기관별 반복되는 전화 업무 프로세스를 학습해 실제 통화가 쌓일수록 업무 완료 성공률이 높아지는 AI 전화 대리인**
+> 
+
+으로 발전합니다.
+
+---
+
+## Future
+
+### 1. 지원 기관 확대
+
+병원에서 시작하여
+
+- 통신사
+- 공과금
+- 금융
+- 보험
+- 공공기관
+- 일반 고객센터
+
+등으로 지원 범위를 확장합니다.
+
+### 2. Task Library
+
+기관별로 반복되는 업무를 구조화합니다.
+
+예:
+
+`Hospital.RescheduleAppointment`
+
+`Telecom.ChangeInstallationDate`
+
+`Utility.CheckBilling`
+
+이를 통해 사용자는 복잡한 전화 절차를 알 필요 없이 목적만 전달할 수 있습니다.
+
+### 3. MCP Integration
+
+향후 DialAI의 전화 실행 기능을 MCP 형태로 제공하여 다른 AI Agent가 전화가 필요한 순간 DialAI를 호출할 수 있도록 확장합니다.
+
+예를 들어 다른 AI Agent가
+
+> “이 예약은 웹에서 변경할 수 없고 전화 문의가 필요합니다.”
+> 
+
+라고 판단하면 DialAI를 호출하여 실제 업무를 수행할 수 있습니다.
+
+### 4. Personalization
+
+사용자별
+
+- 통화 스타일
+- 선호 표현
+- 의사결정 기준
+- Voice
+
+를 학습하여 더욱 개인화된 전화 대리인으로 발전시킵니다.

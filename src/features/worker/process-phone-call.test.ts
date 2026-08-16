@@ -89,4 +89,26 @@ describe("processPhoneCall", () => {
     expect(repo.completeAttempt).toHaveBeenCalledWith("call-123", 1, { providerCallId: "provider-127", status: "provider_exception" });
     expect(repo.failOrRetry).toHaveBeenCalledWith("call-123", "provider_exception", "2026-08-16T00:10:00.000Z");
   });
+
+  it("does not schedule a duplicate call when persistence fails after provider initiation", async () => {
+    const repo = repository();
+    vi.mocked(repo.startAttempt).mockRejectedValue(new Error("database unavailable"));
+    const gateway: VoiceGateway = {
+      call: vi.fn(async (_job, callbacks) => {
+        await callbacks.onInitiated("provider-128");
+        throw new Error("unreachable");
+      }),
+    };
+
+    await expect(
+      processPhoneCall(job, {
+        repository: repo,
+        gateway,
+        now: () => new Date("2026-08-16T00:00:00.000Z"),
+      }),
+    ).rejects.toThrow("database unavailable");
+
+    expect(repo.completeAttempt).not.toHaveBeenCalled();
+    expect(repo.failOrRetry).not.toHaveBeenCalled();
+  });
 });

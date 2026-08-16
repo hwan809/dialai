@@ -122,6 +122,8 @@ describe("ClawOpsVoiceGateway", () => {
     const agent = mocks.agentInstances[0] as FakeAgent;
     const outcomeTool = agent.tool.mock.calls[0]?.[0] as {
       name: string;
+      parameters: Record<string, unknown>;
+      required: string[];
       handler: (args: unknown) => Promise<string>;
     };
 
@@ -138,6 +140,15 @@ describe("ClawOpsVoiceGateway", () => {
       greeting: true,
     });
     expect(outcomeTool.name).toBe("record_call_outcome");
+    expect(outcomeTool.parameters).toMatchObject({
+      result: { type: "string", enum: ["completed", "needs_human"] },
+      summary: { type: "string" },
+      facts: { type: "array" },
+      needsFollowUp: { type: "boolean" },
+      reason: { type: "string" },
+    });
+    expect(outcomeTool.parameters).not.toHaveProperty("type");
+    expect(outcomeTool.required).toEqual(["result", "summary"]);
     expect(agent.call).toHaveBeenCalledWith("01012345678", {
       timeout: 60,
       machineDetection: "Enable",

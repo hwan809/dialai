@@ -9,7 +9,7 @@ npm install
 cp .env.example .env.local
 ```
 
-Create a Supabase project, set `NEXT_PUBLIC_SUPABASE_URL`, and apply the SQL migration in `supabase/migrations/` to create the tenant, API-key, phone-call-job, and call-attempt tables plus their queue RPCs. For server and worker access, prefer `SUPABASE_SECRET_KEY`; `SUPABASE_SERVICE_ROLE_KEY` is a legacy fallback only. Neither key belongs in a `NEXT_PUBLIC_` variable.
+Create a Supabase project, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and apply the SQL migration in `supabase/migrations/` to create the tenant, API-key, phone-call-job, and call-attempt tables plus their queue RPCs. For server and worker access, prefer `SUPABASE_SECRET_KEY`; `SUPABASE_SERVICE_ROLE_KEY` is a legacy fallback only. Neither server key belongs in a `NEXT_PUBLIC_` variable. The local worker and utility scripts automatically read `.env.local` when it exists.
 
 Create a tenant and its MCP bearer token after configuring the Supabase environment:
 
@@ -66,7 +66,7 @@ Automated tests never place a telephone call. The smoke command refuses to run u
 RUN_LIVE_CALL=true LIVE_CALL_TO=01000000000 npm run smoke:call
 ```
 
-Use only a number whose owner has approved the test. The command normalizes that explicit number, performs one short connection check, redacts its final output, and disconnects after the call.
+Set `LIVE_CALL_OBJECTIVE` and `LIVE_CALL_CONTEXT` when you want to exercise a specific scenario. Use only a number whose owner has approved the test. The command normalizes that explicit number, performs exactly one call, redacts its final output, and disconnects after the call.
 
 ## Verification
 

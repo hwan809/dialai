@@ -35,36 +35,21 @@ type CallDetailClient = {
 };
 
 const outcomeToolParameters = {
-  type: "object",
-  oneOf: [
-    {
+  result: { type: "string", enum: ["completed", "needs_human"] },
+  summary: { type: "string" },
+  facts: {
+    type: "array",
+    items: {
+      type: "object",
       properties: {
-        result: { const: "completed" },
-        summary: { type: "string" },
-        facts: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              label: { type: "string" },
-              value: { type: "string" },
-            },
-            required: ["label", "value"],
-          },
-        },
-        needsFollowUp: { type: "boolean" },
+        label: { type: "string" },
+        value: { type: "string" },
       },
-      required: ["result", "summary", "facts", "needsFollowUp"],
+      required: ["label", "value"],
     },
-    {
-      properties: {
-        result: { const: "needs_human" },
-        summary: { type: "string" },
-        reason: { type: "string" },
-      },
-      required: ["result", "summary", "reason"],
-    },
-  ],
+  },
+  needsFollowUp: { type: "boolean" },
+  reason: { type: "string" },
 } as const;
 
 export class ClawOpsVoiceGateway implements VoiceGateway {
@@ -104,7 +89,7 @@ export class ClawOpsVoiceGateway implements VoiceGateway {
       name: "record_call_outcome",
       description: "통화의 확인된 결과를 기록합니다.",
       parameters: outcomeToolParameters,
-      required: ["result"],
+      required: ["result", "summary"],
       handler: async (args) => {
         const parsedOutcome = phoneCallOutcomeSchema.parse(args) as PhoneCallOutcome;
         outcome = parsedOutcome;
